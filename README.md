@@ -19,17 +19,17 @@
 
 ## 2. Reservation Domain
 
-Our project is a cinema reservation system that allows users to reserve seats for specific movie screenings.
+Our project is a cinema reservation system that allows registered users to reserve seats for specific movie screenings.
 
 | Element | Description |
 |---|---|
 | **Resource** | A seat for a specific movie screening |
-| **Reservation** | Reservation of one or more seats for a specific movie screening |
-| **User** | Cinema customer |
+| **Reservation** | A uniquely identified reservation of one or more seats for a specific movie screening, including its state |
+| **User** | Registered cinema customer |
 | **States** | `DRAFT`, `CONFIRMED`, `CANCELLED` |
-| **Create** | A user creates a reservation for selected seats |
+| **Create** | A registered user creates a reservation for selected seats |
 | **Confirm** | A reservation is confirmed |
-| **Cancel** | A user cancels a reservation |
+| **Cancel** | A registered user cancels a reservation |
 | **Check availability** | The system checks whether a seat is available for the selected screening |
 | **Common rule** | The same seat for the same movie screening cannot be part of two confirmed reservations |
 | **Boundary** | Notification Service – sends a notification to the user after a reservation is confirmed or cancelled |
