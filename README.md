@@ -1,3 +1,77 @@
+## Build and Run
+
+### Requirements
+
+- Java 21
+- Git
+
+The project uses Maven Wrapper, so a separate Maven installation is not required.
+
+### Clone the repository
+
+```bash
+git clone https://github.com/ricardoboh/cinema_reservation.git
+cd cinema_reservation/cinema-reservation-project
+```
+
+### Build the project
+
+#### Windows
+
+```bash
+.\mvnw.cmd clean package
+```
+
+#### Linux / macOS
+
+```bash
+./mvnw clean package
+```
+
+A successful build should finish with:
+
+```text
+BUILD SUCCESS
+```
+
+### Run tests
+
+#### Windows
+
+```bash
+.\mvnw.cmd test
+```
+
+#### Linux / macOS
+
+```bash
+./mvnw test
+```
+
+All automated tests should complete successfully.
+
+### Run the application
+
+#### Windows
+
+```bash
+.\mvnw.cmd spring-boot:run
+```
+
+#### Linux / macOS
+
+```bash
+./mvnw spring-boot:run
+```
+
+The Spring Boot application should start successfully on port `8080`.
+
+After the application has started, it should be available at:
+
+`http://localhost:8080`
+
+
+
 # C01 – Reservation System
 
 ## 1. Git + Repository
