@@ -123,3 +123,16 @@ A large number of users may try to reserve seats for the same popular movie scre
 
 **Why it is relevant to our reservation system:**  
 Concurrent reservation requests increase the risk that multiple users try to reserve the same seat at the same time. The system must remain responsive and ensure that a seat cannot be confirmed for more than one reservation.
+
+
+## 9. CP1 Walking Skeleton
+
+A registered user creates a reservation for a seat at a movie screening.
+
+`POST /reservations`
+
+→ validate user, screening, seat and seat availability  
+→ create reservation in `DRAFT` state  
+→ persist the reservation  
+→ return `HTTP 201 Created` with the reservation ID  
+→ automated integration test verifies that the reservation was stored successfully
