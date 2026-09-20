@@ -1,121 +1,90 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+﻿import { useState } from 'react'
+import { createReservation } from './reservations'
 import './App.css'
 
+const seats = [1, 2, 3, 4].map((id) => ({ id, label: `A${id}` }))
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [pending, setPending] = useState(false)
+  const [reservationId, setReservationId] = useState<number | null>(null)
+  const [error, setError] = useState('')
+  const selectedSeats = seats.filter((seat) => selectedIds.includes(seat.id))
+
+  function toggleSeat(id: number) {
+    setSelectedIds((current) => current.includes(id)
+      ? current.filter((selected) => selected !== id)
+      : [...current, id])
+    setReservationId(null)
+    setError('')
+  }
+
+  async function reserve() {
+    if (pending || selectedIds.length === 0) return
+    setPending(true)
+    setError('')
+    setReservationId(null)
+    try {
+      const id = await createReservation(selectedSeats.map((seat) => seat.id))
+      setReservationId(id)
+      setSelectedIds([])
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not create the reservation.')
+    } finally {
+      setPending(false)
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <main className="reservation-page">
+      <header>
+        <p className="eyebrow">Reserved Bytes / CP1 demo</p>
+        <h1>Cinema reservation</h1>
+        <p>Choose your seats for the big screen.</p>
+      </header>
+      <section className="reservation-card" aria-labelledby="screening-title">
+        <div className="screening-info">
+          <div>
+            <p className="eyebrow">Development screening / 1</p>
+            <h2 id="screening-title">CP1 Demo Movie</h2>
+            <p>Hall A</p>
+          </div>
+          <span className="badge">Draft reservation</span>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
+        <div className="auditorium">
+          <div className="cinema-screen">Screen</div>
+          <p id="seat-instructions">Select a seat. Select it again to remove it.</p>
+          <div className="seat-row" role="group" aria-label="Row A seats" aria-describedby="seat-instructions">
+            {seats.map((seat) => (
+              <button key={seat.id} type="button" className="seat"
+                aria-label={`Seat ${seat.label}`} aria-pressed={selectedIds.includes(seat.id)}
+                disabled={pending} onClick={() => toggleSeat(seat.id)}>
+                {seat.label}
+                <span aria-hidden="true">{selectedIds.includes(seat.id) ? '✓' : '○'}</span>
+              </button>
+            ))}
+          </div>
+          <p className="seat-note">Four development seats / Row A</p>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+        <div className="reservation-summary">
+          <div>
+            <h3>Selected seats</h3>
+            <p aria-live="polite">{selectedSeats.length ? selectedSeats.map((seat) => seat.label).join(', ') : 'No seats selected'}</p>
+          </div>
+          <button className="reserve-button" type="button" disabled={pending || selectedIds.length === 0} onClick={reserve}>
+            {pending ? 'Reserving…' : 'Reserve'}
+          </button>
+        </div>
+        {reservationId !== null && (
+          <div className="message success" role="status">
+            <strong>Draft reservation created successfully.</strong>
+            <p>Reservation ID: {reservationId}</p>
+          </div>
+        )}
+        {error && <div className="message error" role="alert">{error}</div>}
       </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <p className="footnote">This demo creates a draft reservation. Seats are not held or confirmed.</p>
+    </main>
   )
 }
 
