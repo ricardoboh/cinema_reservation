@@ -1,0 +1,12 @@
+# Opt in with --spring.profiles.active=dev. This disposable database resets on restart.
+spring:
+  datasource:
+    url: jdbc:h2:mem:cinema-dev;DB_CLOSE_DELAY=-1
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:dev-data.sql
