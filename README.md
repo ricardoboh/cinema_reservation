@@ -1,5 +1,9 @@
 ## Build and Run
 
+For the C02 operations, fixtures and Swagger examples, see
+[backend/MANUAL-TESTING.md](backend/MANUAL-TESTING.md).
+Source of truth: [Baseline v0.1](docs/c02_baseline_specification.md).
+
 ### Requirements
 
 - Java 21

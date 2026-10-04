@@ -28,6 +28,14 @@ public class Reservation {
     private ReservationStatus status;
     @Column(nullable = false)
     private Instant createdAt;
+    private Instant cancelledAt;
+
+    public void confirm() { this.status = ReservationStatus.CONFIRMED; }
+
+    public void cancel(Instant now) {
+        this.status = ReservationStatus.CANCELLED;
+        this.cancelledAt = now;
+    }
 
     protected Reservation() {}
 
