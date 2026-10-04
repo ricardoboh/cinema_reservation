@@ -1,167 +1,104 @@
-﻿import { useEffect, useState } from 'react'
-import { changeReservation, createReservation, DEMO_SCREENING_ID, DEMO_USER_ID, loadAvailability } from './reservations'
+import { useEffect, useState } from 'react'
+import { changeReservation, createReservation, decideReservation, loadAvailability, loadReservation } from './reservations'
 import type { Reservation, SeatAvailability } from './reservations'
 import './App.css'
-
-function seatLabel(seat: SeatAvailability) {
-  return `Row ${seat.rowNumber}, seat ${seat.seatNumber}`
+const descriptions: Record<string, string> = {
+  DRAFT: 'Your draft is saved. Seats remain available until you confirm.',
+  PENDING_APPROVAL: 'All selected seats are held together. A separate Approver must decide before the deadline.',
+  CONFIRMED: 'Your reservation is confirmed. All selected seats remain allocated.',
+  REJECTED: 'The Approver rejected this request. All seats have been released.',
+  EXPIRED: 'The approval deadline passed. All seats have been released.',
+  CANCELLED: 'You cancelled this reservation. All seats have been released.',
 }
-function errorMessage(cause: unknown) {
-  return cause instanceof Error ? cause.message : 'Could not complete the request.'
-}
-
+const date = (value: string | null) => value ? new Date(value).toLocaleString() : '—'
+const message = (cause: unknown) => cause instanceof Error ? cause.message : 'Request failed.'
 function App() {
   const [seats, setSeats] = useState<SeatAvailability[]>([])
-  const [availabilityReady, setAvailabilityReady] = useState(false)
-  const [selectedIds, setSelectedIds] = useState<number[]>([])
-  const [pending, setPending] = useState('Loading availability')
+  const [selected, setSelected] = useState<number[]>([])
   const [reservation, setReservation] = useState<Reservation | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [ready, setReady] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const activeReservation = reservation !== null && reservation.status !== 'CANCELLED'
-  const selectedSeats = seats.filter((seat) => selectedIds.includes(seat.seatId))
-  const rows = [...new Set(seats.map((seat) => seat.rowNumber))].sort((a, b) => a - b)
-
+  const [notice, setNotice] = useState('')
+  const [actor, setActor] = useState(3)
+  const [now, setNow] = useState(() => Date.now())
+  const active = reservation !== null && ['DRAFT', 'PENDING_APPROVAL', 'CONFIRMED'].includes(reservation.status)
   useEffect(() => {
-    let active = true
-    loadAvailability().then((loaded) => {
-      if (active) { setSeats(loaded); setAvailabilityReady(true) }
-    }).catch((cause: unknown) => {
-      if (active) setError(errorMessage(cause))
-    }).finally(() => { if (active) setPending('') })
-    return () => { active = false }
+    let mounted = true
+    loadAvailability().then(data => { if (mounted) { setSeats(data); setReady(true) } })
+      .catch((cause: unknown) => { if (mounted) setError(message(cause)) })
+    return () => { mounted = false }
   }, [])
-
-  async function reloadAvailability() {
-    setAvailabilityReady(false)
-    const loaded = await loadAvailability()
-    setSeats(loaded)
-    setSelectedIds((current) => current.filter((id) => loaded.some((seat) => seat.seatId === id && seat.availability === 'AVAILABLE')))
-    setAvailabilityReady(true)
+  useEffect(() => {
+    if (reservation?.status !== 'PENDING_APPROVAL') return
+    let mounted = true
+    let refreshing = false
+    const timer = window.setInterval(() => {
+      setNow(Date.now())
+      if (busy || refreshing) return
+      refreshing = true
+      Promise.all([loadReservation(reservation.id), loadAvailability()]).then(([current, availability]) => {
+        if (mounted) {
+          setReservation(current); setSeats(availability); setReady(true)
+          if (current.status !== reservation.status) setNotice(`Reservation ${current.id}: ${current.status}.`)
+        }
+      }).catch((cause: unknown) => { if (mounted) { setError(message(cause)); setReady(false) } })
+        .finally(() => { refreshing = false })
+    }, 1000)
+    return () => { mounted = false; window.clearInterval(timer) }
+  }, [reservation?.id, reservation?.status, busy])
+  async function reload(current: Reservation | null) {
+    setReady(false)
+    if (current) setReservation(await loadReservation(current.id))
+    const data = await loadAvailability()
+    setSeats(data)
+    setSelected(ids => ids.filter(id => data.some(seat => seat.seatId === id && seat.availability === 'AVAILABLE')))
+    setReady(true)
   }
-
-  async function refresh() {
-    if (pending) return
-    setPending('Refreshing availability')
-    setError('')
-    setSuccess('')
-    try { await reloadAvailability(); setSuccess('Availability refreshed from the backend.') }
-    catch (cause) { setError(errorMessage(cause)) }
-    finally { setPending('') }
-  }
-
-  function toggleSeat(id: number) {
-    setSelectedIds((current) => current.includes(id) ? current.filter((selected) => selected !== id) : [...current, id])
-    setError('')
-    setSuccess('')
-  }
-
-  async function reserve() {
-    if (pending || !availabilityReady || activeReservation || selectedIds.length === 0) return
-    setPending('Creating reservation')
-    setError('')
-    setSuccess('')
+  async function run(operation: 'create' | 'refresh' | 'confirm' | 'cancel' | 'APPROVE' | 'REJECT') {
+    if (busy) return
+    setBusy(true); setError(''); setNotice('')
+    let current = reservation
     try {
-      const created = await createReservation(selectedIds)
-      setReservation(created)
-      setSelectedIds([])
-      setSuccess(`Reservation ${created.id} created (HTTP 201). DRAFT does not block seats.`)
-      try { await reloadAvailability() }
-      catch (cause) { setError(`Reservation created, but availability could not be refreshed: ${errorMessage(cause)}`) }
-    } catch (cause) { setError(errorMessage(cause)) }
-    finally { setPending('') }
-  }
-
-  async function transition(operation: 'confirm' | 'cancel') {
-    if (pending || !reservation) return
-    setPending(operation === 'confirm' ? 'Confirming reservation' : 'Cancelling reservation')
-    setError('')
-    setSuccess('')
-    try {
-      const updated = await changeReservation(reservation.id, operation)
-      setReservation(updated)
-      setSuccess(`Reservation ${updated.id} is ${updated.status} (HTTP 200).`)
-      try { await reloadAvailability() }
-      catch (cause) { setError(`Reservation updated, but availability could not be refreshed: ${errorMessage(cause)}`) }
+      if (operation === 'create') { current = await createReservation(selected); setSelected([]) }
+      else if (operation === 'confirm' || operation === 'cancel') { if (current) current = await changeReservation(current.id, operation) }
+      else if (operation === 'APPROVE' || operation === 'REJECT') { if (current) current = await decideReservation(current.id, operation, actor) }
+      if (current) setReservation(current)
+      await reload(current)
+      setNotice(operation === 'refresh' ? 'Availability and reservation refreshed from the backend.' : `Reservation ${current?.id}: ${current?.status}.`)
     } catch (cause) {
-      const message = errorMessage(cause)
-      try { await reloadAvailability(); setError(message) }
-      catch (refreshCause) { setError(`${message} Availability refresh also failed: ${errorMessage(refreshCause)}`) }
-    } finally { setPending('') }
+      setError(message(cause))
+      try { await reload(current) } catch (refreshCause) { setError(`${message(cause)} Refresh failed: ${message(refreshCause)}`) }
+    } finally { setBusy(false) }
   }
-
-  return (
-    <main className="reservation-page">
-      <header>
-        <p className="eyebrow">Reserved Bytes / C02 demo</p>
-        <h1>Cinema reservation</h1>
-        <p>Check seats, create a draft, then confirm or cancel.</p>
-      </header>
-      <section className="reservation-card" aria-labelledby="screening-title" aria-busy={Boolean(pending)}>
-        <div className="screening-info">
-          <div>
-            <p className="eyebrow">Development screening / {DEMO_SCREENING_ID}</p>
-            <h2 id="screening-title">CP1 Demo Movie</h2>
-            <p>Hall A · Demo user ID: {DEMO_USER_ID}</p>
-            <p className="seat-note">Fixture information. Starts one day after the dev backend starts.</p>
-          </div>
-          <button type="button" className="secondary-button" disabled={Boolean(pending)} onClick={refresh}>Check Availability</button>
+  const remaining = reservation?.approvalDeadline ? Math.max(0, Math.ceil((Date.parse(reservation.approvalDeadline) - now) / 1000)) : 0
+  return <main className="reservation-page">
+    <header className="page-header"><div><p className="eyebrow">Reserved Bytes · Baseline v0.2</p><h1>A seat for your next story.</h1><p>A runnable cinema booking demo with delayed approval.</p></div><span className="demo-tag">Development demo</span></header>
+    <div className="booking-layout" aria-busy={busy}>
+      <section className="reservation-card booking-card" aria-labelledby="screening-title">
+        <div className="screening-info"><div><p className="eyebrow">Screening 1 · Hall A</p><h2 id="screening-title">CP1 Demo Movie</h2><p className="seat-note">Development fixture · starts one day after backend initialization</p></div><button className="secondary-button" disabled={busy} onClick={() => run('refresh')}>Check Availability</button></div>
+        <div className="auditorium"><div className="cinema-screen">Cinema screen</div><p id="seat-instructions">Choose your seats</p>
+          {[...new Set(seats.map(s => s.rowNumber))].map(row => <div className="seat-row" key={row} role="group" aria-label={`Row ${row}`}>
+            {seats.filter(s => s.rowNumber === row).map(seat => <button key={seat.seatId} className={`seat ${seat.availability === 'UNAVAILABLE' ? 'unavailable' : ''} ${seat.approvalRequired ? 'approval-seat' : ''}`} aria-label={`Row ${row}, seat ${seat.seatNumber}: ${seat.availability}`} aria-pressed={selected.includes(seat.seatId)} disabled={busy || !ready || active || seat.availability === 'UNAVAILABLE'} onClick={() => setSelected(ids => ids.includes(seat.seatId) ? ids.filter(id => id !== seat.seatId) : [...ids, seat.seatId])}>
+              <strong>{row}:{seat.seatNumber}</strong><span>{selected.includes(seat.seatId) ? 'Selected' : seat.availability === 'AVAILABLE' ? 'Available' : 'Unavailable'}</span><small>{seat.approvalRequired ? 'Approval required' : 'Direct confirm'}</small></button>)}
+          </div>)}
+          <div className="legend"><span>○ Available</span><span>● Selected</span><span>▧ Unavailable: held or confirmed</span></div>{!ready && <p className="seat-note">Availability is loading or stale. Refresh to retry.</p>}
         </div>
-        <div className="auditorium">
-          <div className="cinema-screen">Screen</div>
-          <p id="seat-instructions">Select available seats. Unavailable seats cannot be selected.</p>
-          {rows.map((row) => (
-            <div className="seat-row" key={row} role="group" aria-label={`Row ${row}`} aria-describedby="seat-instructions">
-              {seats.filter((seat) => seat.rowNumber === row).map((seat) => (
-                <button key={seat.seatId} type="button"
-                  className={`seat ${seat.availability === 'UNAVAILABLE' ? 'unavailable' : ''}`}
-                  aria-label={`${seatLabel(seat)}: ${seat.availability}`} aria-pressed={selectedIds.includes(seat.seatId)}
-                  disabled={Boolean(pending) || !availabilityReady || activeReservation || seat.availability === 'UNAVAILABLE'}
-                  onClick={() => toggleSeat(seat.seatId)}>
-                  {seat.rowNumber}:{seat.seatNumber}
-                  <span>{selectedIds.includes(seat.seatId) ? 'Selected' : seat.availability === 'AVAILABLE' ? 'Available' : 'Unavailable'}</span>
-                </button>
-              ))}
-            </div>
-          ))}
-          {!pending && availabilityReady && seats.length === 0 && <p>No seats returned for this screening.</p>}
-          {!pending && !availabilityReady && <p>Availability is unavailable or stale. Use Check Availability to retry.</p>}
-          <p className="seat-note">AVAILABLE = selectable · UNAVAILABLE = confirmed reservation</p>
-        </div>
-        <div className="reservation-summary">
-          <div>
-            <h3>Selected seats</h3>
-            <p aria-live="polite">{selectedSeats.length ? selectedSeats.map(seatLabel).join('; ') : 'No seats selected'}</p>
-          </div>
-          <button className="reserve-button" type="button"
-            disabled={Boolean(pending) || !availabilityReady || activeReservation || selectedIds.length === 0} onClick={reserve}>
-            Create Reservation
-          </button>
-        </div>
-        <div className="current-reservation" aria-live="polite">
-          <h3>Current reservation</h3>
-          {reservation ? <>
-            <p>Reservation ID: <strong>{reservation.id}</strong> · Status: <strong className="badge">{reservation.status}</strong></p>
-            <p>Reserved seats: {reservation.seatIds.map((id) => {
-              const seat = seats.find((item) => item.seatId === id)
-              return seat ? seatLabel(seat) : `Seat ID ${id}`
-            }).join('; ')}</p>
-            <p className="seat-note">{reservation.status === 'DRAFT' ? 'This draft does not block seats. Confirm checks availability.'
-              : reservation.status === 'CONFIRMED' ? 'These seats are now allocated to this reservation.'
-                : 'The reservation is cancelled. You can select seats and create another draft.'}</p>
-            <div className="reservation-actions">
-              {reservation.status === 'DRAFT' && <button className="reserve-button" disabled={Boolean(pending)} onClick={() => transition('confirm')}>Confirm Reservation</button>}
-              {activeReservation && <button className="secondary-button" disabled={Boolean(pending)} onClick={() => transition('cancel')}>Cancel Reservation</button>}
-            </div>
-          </> : <p>No reservation created yet.</p>}
-        </div>
-        {pending && <p className="progress" role="status">{pending}…</p>}
-        {success && <div className="message success" role="status">{success}</div>}
-        {error && <div className="message error" role="alert">{error}</div>}
+        <div className="reservation-summary"><div><h3>Your selection</h3><p>{selected.length ? selected.map(id => { const seat = seats.find(s => s.seatId === id); return `${seat?.rowNumber}:${seat?.seatNumber}` }).join(', ') : 'Select an available seat above'}</p><p className="seat-note">Customer identity: owner 1</p></div><button className="reserve-button" disabled={busy || !ready || active || !selected.length} onClick={() => run('create')}>Create Reservation</button></div>
+        <div className="policy-note"><strong>Two paths, one reservation.</strong> Seats 1–2 confirm directly. Seats 3–4 require demo approval. A mixed selection holds every seat until the whole request is resolved.</div>
       </section>
-      <p className="footnote">Development demo · Only CONFIRMED reservations block seats. Reloading the page clears the current reservation from this UI.</p>
-    </main>
-  )
+      <aside className="reservation-card status-card"><p className="eyebrow">Your booking</p><h2>Reservation journey</h2><div className="journey"><span>1 · Draft</span><span>2 · Submit / hold</span><span>3 · Outcome</span></div>
+        <div className="current-reservation" aria-live="polite">{reservation ? <><p>Reservation ID: <strong>{reservation.id}</strong></p><p className={`badge status-${reservation.status.toLowerCase()}`}>{reservation.status}</p><p>Seats: {reservation.seatIds.map(id => { const seat = seats.find(s => s.seatId === id); return seat ? `${seat.rowNumber}:${seat.seatNumber}` : `ID ${id}` }).join(', ')}</p><p>{descriptions[reservation.status]}</p>
+          {reservation.approvalRequestedAt && <div className="deadline"><p>Requested: {date(reservation.approvalRequestedAt)}</p><p>Deadline: <strong>{date(reservation.approvalDeadline)}</strong></p>{reservation.status === 'PENDING_APPROVAL' && <p>{remaining}s remaining · state polls the backend</p>}</div>}
+          {reservation.decision && <p>Decision: {reservation.decision} · Approver {reservation.decidedBy}<br />{date(reservation.decidedAt)}</p>}{reservation.expiredAt && <p>Expired: {date(reservation.expiredAt)}</p>}{reservation.cancelledAt && <p>Cancelled: {date(reservation.cancelledAt)}</p>}
+          <div className="reservation-actions">{reservation.status === 'DRAFT' && <button className="reserve-button" disabled={busy} onClick={() => run('confirm')}>Confirm Reservation</button>}{active && <button className="secondary-button" disabled={busy} onClick={() => run('cancel')}>Cancel Reservation</button>}</div></> : <p>Create a draft to begin. Drafts do not block seats.</p>}</div>
+        <section className="approver-panel" aria-labelledby="approver-title"><p className="eyebrow">Separate demo role</p><h3 id="approver-title">DEMO Approver</h3><p>Approver 3 has decision authority. Customer ownership alone grants no approval authority.</p>
+          <label>Decision caller<select value={actor} disabled={busy} onChange={event => setActor(Number(event.target.value))}><option value={3}>Approver 3 · authorized</option><option value={1}>Owner 1 · unauthorized (403 demo)</option></select></label>
+          <div className="reservation-actions"><button className="reserve-button" disabled={busy || reservation?.status !== 'PENDING_APPROVAL'} onClick={() => run('APPROVE')}>APPROVE</button><button className="secondary-button" disabled={busy || reservation?.status !== 'PENDING_APPROVAL'} onClick={() => run('REJECT')}>REJECT</button></div><p className="seat-note">For expiration, leave the request pending until its deadline. The backend releases the hold; this page refreshes automatically.</p>
+        </section>
+      </aside>
+    </div>{busy && <p role="status" className="progress">Contacting reservation backend…</p>}{notice && <div className="message success" role="status">{notice}</div>}{error && <div className="message error" role="alert">{error}</div>}
+    <p className="footnote">C02 development application · Configurable demo approval window (default 60s) · No authenticated login · Reloading clears the current booking from this page.</p>
+  </main>
 }
-
 export default App

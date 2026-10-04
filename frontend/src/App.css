@@ -1,43 +1,51 @@
-﻿.reservation-page { max-width: 800px; margin: 0 auto; padding: 56px 24px; }
-.eyebrow { color: #b3a4ea; font-size: .75rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
-h1 { font-size: clamp(2rem, 6vw, 2.8rem); margin: 10px 0; letter-spacing: -.04em; }
-header > p:last-child, .screening-info p:last-child { color: #aeb8ca; }
-.reservation-card { margin-top: 30px; background: #1a2231; border: 1px solid #344055; border-radius: 18px; overflow: hidden; }
-.screening-info { padding: 26px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-h2 { margin: 6px 0; font-size: 1.4rem; }
-.badge { border: 1px solid #4b526b; border-radius: 20px; padding: 5px 12px; color: #c9c4e0; font-size: .75rem; }
-.auditorium { text-align: center; padding: 20px 24px 36px; background: #141c29; }
-.cinema-screen { width: 85%; margin: 0 auto 38px; padding-top: 14px; border-top: 5px solid #9aaccb; border-radius: 50% 50% 0 0; color: #aeb8ca; text-transform: uppercase; font-size: .7rem; letter-spacing: .22em; }
-#seat-instructions, .seat-note { color: #aeb8ca; font-size: .85rem; }
-.seat-row { display: flex; justify-content: center; gap: 14px; margin: 24px 0 18px; }
-.seat { width: 72px; min-height: 72px; border: 2px solid #62728d; border-bottom-width: 6px; border-radius: 12px 12px 7px 7px; background: #26344a; color: #f1f5ff; font-weight: 700; }
-.seat span { display: block; font-size: .75rem; }
-.seat:enabled:hover { border-color: #bba5ff; }
-.seat[aria-pressed='true'] { background: #bba5ff; border-color: #d2c4ff; color: #201638; }
-.seat:disabled { opacity: .65; }
-.seat.unavailable { background: #452a30; border-color: #98545e; color: #ffd0ce; }
-.seat-row { flex-wrap: wrap; }
-.seat { width: 94px; }
-.seat span { font-size: .65rem; }
-.secondary-button { padding: 12px 18px; border: 1px solid #8996b0; border-radius: 9px; background: #26344a; color: #e9edf5; }
-.secondary-button:disabled { opacity: .5; cursor: not-allowed; }
-.current-reservation { padding: 0 26px 24px; }
-.current-reservation p { margin-top: 10px; }
-.reservation-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
-.progress { margin: 0 26px 24px; color: #c9c4e0; }
-.reservation-summary { padding: 24px 26px; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
-h3 { font-size: .85rem; color: #aeb8ca; margin-bottom: 5px; font-weight: 500; }
-.reserve-button { padding: 12px 30px; background: #bba5ff; color: #201638; border: 0; border-radius: 9px; font-weight: 700; }
-.reserve-button:enabled:hover { background: #d2c4ff; }
-.reserve-button:disabled { background: #354056; color: #a5aec0; cursor: not-allowed; }
-.message { margin: 0 26px 24px; padding: 16px; border: 1px solid; border-radius: 9px; overflow-wrap: anywhere; }
-.success { color: #b6efd3; background: #193b33; border-color: #39765d; }
-.error { color: #ffd0ce; background: #452a30; border-color: #98545e; }
-.footnote { margin-top: 18px; color: #aeb8ca; font-size: .8rem; text-align: center; }
-@media (max-width: 480px) {
-  .reservation-page { padding: 30px 16px; }
-  .screening-info, .reservation-summary { padding: 20px; }
-  .auditorium { padding-inline: 16px; }
-  .seat-row { gap: 10px; }
-  .reservation-summary { align-items: stretch; flex-direction: column; }
-}
+.reservation-page { max-width: 1400px; margin: auto; padding: 44px 40px; }
+.page-header { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 32px; }
+.eyebrow { color: #6554ab; font-size: .75rem; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+h1 { font-size: clamp(2rem, 3.4vw, 3.2rem); letter-spacing: -.04em; margin: 8px 0; line-height: 1.2; }
+h2 { font-size: 1.55rem; margin: 6px 0; }
+h3 { font-size: 1rem; }
+.demo-tag { border: 1px solid #c9d2df; padding: 8px 16px; border-radius: 30px; white-space: nowrap; font-size: .8rem; background: white; }
+.booking-layout { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(340px, 1fr); gap: 24px; align-items: start; }
+.reservation-card { background: white; border: 1px solid #dce2ec; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px #283d5c08; }
+.screening-info { padding: 28px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.seat-note { color: #617089; font-size: .8rem; }
+.auditorium { background: linear-gradient(#f4f3fc, #f9fafc); padding: 40px 24px 32px; text-align: center; min-height: 350px; }
+.cinema-screen { width: 85%; margin: 0 auto 42px; padding-top: 14px; border-top: 5px solid #b7aedc; border-radius: 50% 50% 0 0; color: #655987; letter-spacing: .22em; text-transform: uppercase; font-size: .7rem; }
+.seat-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 16px; margin: 28px 0; }
+.seat { width: 112px; min-height: 105px; border: 2px solid #b5ceca; border-bottom-width: 7px; border-radius: 16px 16px 8px 8px; background: #e8f4ef; color: #205c4e; }
+.seat strong { display: block; font-size: 1.4rem; }
+.seat span, .seat small { display: block; font-size: .7rem; }
+.seat.approval-seat { border-top-color: #c69a42; }
+.seat[aria-pressed='true'] { background: #6252b1; color: white; border-color: #4b3d91; }
+.seat.unavailable { background: #eee1e2; border-color: #c9a2a8; color: #864151; }
+.seat:enabled:hover { transform: translateY(-3px); }
+.legend { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; font-size: .75rem; color: #526078; }
+.reservation-summary { padding: 28px; display: flex; gap: 20px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+.reserve-button, .secondary-button { padding: 11px 18px; border-radius: 9px; font-weight: 650; font-size: .85rem; }
+.reserve-button { border: 1px solid #6252b1; background: #6252b1; color: white; }
+.secondary-button { border: 1px solid #c9d2df; background: white; color: #354760; }
+button:disabled { opacity: .55; cursor: not-allowed; }
+.seat.unavailable:disabled { opacity: 1; }
+.policy-note { margin: 0 28px 28px; padding: 18px; background: #f5f4fb; border-radius: 12px; font-size: .85rem; }
+.policy-note strong { display: block; margin-bottom: 4px; }
+.status-card { padding: 28px; }
+.journey { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 24px; font-size: .72rem; }
+.journey span { background: #f1f3f8; padding: 7px 9px; border-radius: 6px; }
+.current-reservation p { margin: 12px 0; font-size: .9rem; }
+.badge { display: inline-block; background: #eae7f5; color: #5a498f; border: 1px solid #d0c8e9; padding: 6px 12px; border-radius: 8px; font-weight: 750; letter-spacing: .03em; }
+.badge.status-pending_approval { background: #fff4d9; color: #825b10; border-color: #ead296; }
+.badge.status-confirmed { background: #e5f3eb; color: #236348; border-color: #aed0be; }
+.badge.status-rejected, .badge.status-expired, .badge.status-cancelled { background: #f3e8e9; color: #834858; border-color: #dfc3ca; }
+.deadline { padding: 10px 14px; background: #fff9eb; border-radius: 9px; }
+.deadline p { font-size: .78rem; margin: 5px 0; }
+.reservation-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+.approver-panel { margin-top: 28px; border-top: 1px solid #e0e5ec; padding-top: 24px; }
+.approver-panel p { font-size: .8rem; margin: 8px 0; }
+.approver-panel label { display: block; margin-top: 18px; font-size: .8rem; }
+select { display: block; width: 100%; padding: 9px; border: 1px solid #c9d2df; border-radius: 7px; margin-top: 6px; background: white; }
+.message { margin-top: 20px; padding: 16px 20px; border: 1px solid; border-radius: 12px; overflow-wrap: anywhere; }
+.success { color: #215d45; background: #e5f3eb; border-color: #b3d4c1; }
+.error { color: #893e4c; background: #fbecee; border-color: #e3bfc7; }
+.progress, .footnote { margin-top: 20px; color: #617089; font-size: .8rem; }
+@media (max-width: 1000px) { .booking-layout { grid-template-columns: 1fr; } .reservation-page { padding: 28px; } }
+@media (max-width: 540px) { .reservation-page { padding: 22px 14px; } .page-header { align-items: start; flex-direction: column; } .screening-info, .status-card, .reservation-summary { padding: 22px; } .seat { width: 100px; } .auditorium { padding-inline: 14px; } .policy-note { margin-inline: 22px; } }

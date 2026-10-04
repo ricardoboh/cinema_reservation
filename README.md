@@ -2,7 +2,7 @@
 
 For the C02 operations, fixtures and Swagger examples, see
 [backend/MANUAL-TESTING.md](backend/MANUAL-TESTING.md).
-Source of truth: [Baseline v0.1](docs/c02_baseline_specification.md).
+Source of truth: [Baseline v0.2](docs/c02_baseline_specification_v0.2.md). See [frontend/README.md](frontend/README.md) for the React/Vite demo.
 
 ### Requirements
 

@@ -1,5 +1,5 @@
 -- Loaded only by application-dev.yaml, after Hibernate creates the disposable schema.
-INSERT INTO cinema_users (id) VALUES (1), (2);
+INSERT INTO cinema_users (id) VALUES (1), (2), (3);
 
 INSERT INTO screening (id, movie, hall, starts_at) VALUES
     (1, 'CP1 Demo Movie', 'Hall A', DATEADD('DAY', 1, CURRENT_TIMESTAMP)),
@@ -18,6 +18,6 @@ INSERT INTO reservation (id, user_id, screening_id, status, created_at) VALUES
     (101, 1, 3, 'CONFIRMED', DATEADD('DAY', -1, CURRENT_TIMESTAMP));
 INSERT INTO reservation_seats (reservation_id, seat_id) VALUES (100, 1), (101, 2);
 ALTER TABLE reservation ALTER COLUMN id RESTART WITH 1;
-ALTER TABLE cinema_users ALTER COLUMN id RESTART WITH 3;
+ALTER TABLE cinema_users ALTER COLUMN id RESTART WITH 4;
 ALTER TABLE screening ALTER COLUMN id RESTART WITH 4;
 ALTER TABLE seat ALTER COLUMN id RESTART WITH 5;
