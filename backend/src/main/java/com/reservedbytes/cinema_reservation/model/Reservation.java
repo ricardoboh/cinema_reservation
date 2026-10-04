@@ -29,6 +29,37 @@ public class Reservation {
     @Column(nullable = false)
     private Instant createdAt;
     private Instant cancelledAt;
+    private Instant approvalRequestedAt;
+    private Instant approvalDeadline;
+    private Long authorizedApproverId;
+    @ElementCollection
+    private Set<Long> approvalRequiredSeatIds = new LinkedHashSet<>();
+    private String approvalPolicy;
+    private String decision;
+    private Long decidedBy;
+    private Instant decidedAt;
+    private Instant expiredAt;
+
+    public void requestApproval(Instant now, Instant deadline, Set<Long> requiredSeats, Long approver) {
+        status = ReservationStatus.PENDING_APPROVAL;
+        approvalRequestedAt = now;
+        approvalDeadline = deadline;
+        approvalRequiredSeatIds = new LinkedHashSet<>(requiredSeats);
+        authorizedApproverId = approver;
+        approvalPolicy = "C02-DEMO-v1: seat numbers 3 and 4; Approver 3";
+    }
+
+    public void decide(String decision, Long approver, Instant now) {
+        this.decision = decision;
+        decidedBy = approver;
+        decidedAt = now;
+        status = decision.equals("APPROVE") ? ReservationStatus.CONFIRMED : ReservationStatus.REJECTED;
+    }
+
+    public void expire() {
+        status = ReservationStatus.EXPIRED;
+        expiredAt = approvalDeadline;
+    }
 
     public void confirm() { this.status = ReservationStatus.CONFIRMED; }
 

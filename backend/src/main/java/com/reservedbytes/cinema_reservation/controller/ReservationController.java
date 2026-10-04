@@ -26,6 +26,18 @@ public class ReservationController {
         return service.confirm(id, userId);
     }
 
+    @GetMapping("/{id}")
+    public ReservationResponse get(@PathVariable Long id, @RequestHeader("X-User-Id") Long userId) {
+        service.resolveExpiration(id);
+        return service.get(id, userId);
+    }
+
+    @PostMapping("/{id}/approval")
+    public ReservationResponse approval(@PathVariable Long id, @RequestHeader("X-User-Id") Long approverId,
+            @RequestBody ApprovalRequest request) {
+        return service.approval(id, approverId, request);
+    }
+
     @PostMapping("/{id}/cancel")
     public ReservationResponse cancel(@PathVariable Long id, @RequestHeader("X-User-Id") Long userId) {
         return service.cancel(id, userId);

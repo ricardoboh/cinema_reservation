@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import java.time.Clock;
 
 @SpringBootApplication
+@org.springframework.scheduling.annotation.EnableScheduling
 public class CinemaReservationApplication {
 
 	@Bean

@@ -24,12 +24,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Import(ReservationIntegrationTests.TimeConfiguration.class)
 class ReservationIntegrationTests {
     private static final Instant NOW = Instant.parse("2030-06-01T12:00:00Z");
+    private static final java.util.concurrent.atomic.AtomicReference<Instant> TIME = new java.util.concurrent.atomic.AtomicReference<>(NOW);
 
     @TestConfiguration
     static class TimeConfiguration {
         @Bean @Primary
         Clock testClock() {
-            return Clock.fixed(NOW, ZoneOffset.UTC);
+            return new Clock() {
+                public java.time.ZoneId getZone() { return ZoneOffset.UTC; }
+                public Clock withZone(java.time.ZoneId zone) { return this; }
+                public Instant instant() { return TIME.get(); }
+            };
         }
     }
 
@@ -51,6 +56,7 @@ class ReservationIntegrationTests {
 
     @BeforeEach
     void setUp() {
+        TIME.set(NOW);
         org.mockito.Mockito.clearInvocations(notifications);
         reservations.deleteAll();
         seats.deleteAll();
@@ -273,6 +279,206 @@ class ReservationIntegrationTests {
 
     private String request(Long userId, Long screeningId, List<Long> seatIds) throws Exception {
         return mapper.writeValueAsString(Map.of("userId", userId, "screeningId", screeningId, "seatIds", seatIds));
+    }
+
+    private long approvalDraft(boolean mixed) throws Exception {
+        var approvalSeat = seats.findByHallOrderByRowNumberAscSeatNumberAsc("Hall A").stream()
+            .filter(s -> s.getSeatNumber() == 3).findFirst().orElseGet(() -> seats.save(new Seat("Hall A", 1, 3)));
+        return mapper.readTree(post(request(user.getId(), screening.getId(), mixed
+            ? List.of(first.getId(), approvalSeat.getId()) : List.of(approvalSeat.getId()))).body()).get("id").asLong();
+    }
+
+    private HttpResponse<String> decide(long id, long actor, String decision) throws Exception {
+        var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/reservations/" + id + "/approval"))
+            .header("X-User-Id", Long.toString(actor)).header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString("{\"decision\":\"" + decision + "\"}")).build();
+        try (var client = HttpClient.newHttpClient()) {
+            return client.send(request, HttpResponse.BodyHandlers.ofString());
+        }
+    }
+
+    private void assertStatus(long id, ReservationStatus expected) {
+        assertThat(reservations.findById(id).orElseThrow().getStatus()).isEqualTo(expected);
+    }
+
+    private void assertAllAvailability(String expected) throws Exception {
+        var json = mapper.readTree(call("/screenings/" + screening.getId() + "/availability", null).body());
+        for (var seat : json) {
+            if (seat.get("seatNumber").asInt() != 2) assertThat(seat.get("availability").asText()).isEqualTo(expected);
+        }
+    }
+
+    @Test
+    void mixedReservationHoldsAllSeatsAndApprovalPreservesHoldAndHistory() throws Exception {
+        long id = approvalDraft(true), competitor = draft();
+        assertAllAvailability("AVAILABLE");
+        var response = call("/reservations/" + id + "/confirm", user.getId());
+        assertThat(response.statusCode()).isEqualTo(200);
+        var body = mapper.readTree(response.body());
+        assertThat(body.get("status").asText()).isEqualTo("PENDING_APPROVAL");
+        assertThat(Instant.parse(body.get("approvalRequestedAt").asText())).isEqualTo(NOW);
+        assertThat(Instant.parse(body.get("approvalDeadline").asText())).isEqualTo(NOW.plusSeconds(60));
+        assertThat(body.get("approvalRequiredSeatIds").size()).isEqualTo(1);
+        org.mockito.Mockito.verifyNoInteractions(notifications);
+        assertAllAvailability("UNAVAILABLE");
+        assertThat(call("/reservations/" + competitor + "/confirm", user.getId()).statusCode()).isEqualTo(409);
+        assertStatus(competitor, ReservationStatus.DRAFT);
+        var approved = decide(id, 3, "APPROVE");
+        assertThat(approved.statusCode()).isEqualTo(200);
+        assertThat(mapper.readTree(approved.body()).get("decidedBy").asLong()).isEqualTo(3);
+        assertStatus(id, ReservationStatus.CONFIRMED);
+        assertAllAvailability("UNAVAILABLE");
+        assertThat(decide(id, 3, "REJECT").statusCode()).isEqualTo(409);
+        org.mockito.Mockito.verify(notifications).notifyReservationChanged(org.mockito.ArgumentMatchers.argThat(r -> r.status() == ReservationStatus.CONFIRMED));
+    }
+
+    @Test
+    void unauthorizedAndInvalidDecisionsDoNotChangePendingOrHold() throws Exception {
+        long id = approvalDraft(true);
+        call("/reservations/" + id + "/confirm", user.getId());
+        for (String decision : List.of("APPROVE", "REJECT")) {
+            assertThat(decide(id, user.getId() == 3 ? 1 : user.getId(), decision).statusCode()).isEqualTo(403);
+            assertStatus(id, ReservationStatus.PENDING_APPROVAL);
+            assertAllAvailability("UNAVAILABLE");
+        }
+        assertThat(decide(id, 3, "OTHER").statusCode()).isEqualTo(400);
+        org.mockito.Mockito.verifyNoInteractions(notifications);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"REJECT", "CANCEL", "EXPIRE"})
+    void terminalReleaseIsAtomicAndStaleDecisionsCannotAffectNewAllocation(String outcome) throws Exception {
+        long id = approvalDraft(true);
+        call("/reservations/" + id + "/confirm", user.getId());
+        ReservationStatus expected;
+        if (outcome.equals("REJECT")) {
+            assertThat(decide(id, 3, "REJECT").statusCode()).isEqualTo(200);
+            expected = ReservationStatus.REJECTED;
+            assertThat(reservations.findById(id).orElseThrow().getDecidedAt()).isEqualTo(NOW);
+        } else if (outcome.equals("CANCEL")) {
+            assertThat(call("/reservations/" + id + "/cancel", user.getId()).statusCode()).isEqualTo(200);
+            expected = ReservationStatus.CANCELLED;
+        } else {
+            TIME.set(NOW.plusSeconds(60));
+            // Late approval itself must commit system expiration even while returning 409.
+            assertThat(decide(id, 3, "APPROVE").statusCode()).isEqualTo(409);
+            expected = ReservationStatus.EXPIRED;
+            assertThat(reservations.findById(id).orElseThrow().getExpiredAt()).isEqualTo(NOW.plusSeconds(60));
+        }
+        assertStatus(id, expected);
+        assertAllAvailability("AVAILABLE");
+        long next = approvalDraft(true);
+        assertThat(call("/reservations/" + next + "/confirm", user.getId()).statusCode()).isEqualTo(200);
+        for (String decision : List.of("APPROVE", "REJECT")) assertThat(decide(id, 3, decision).statusCode()).isEqualTo(409);
+        for (String operation : List.of("confirm", "cancel")) assertThat(call("/reservations/" + id + "/" + operation, user.getId()).statusCode()).isEqualTo(409);
+        assertStatus(id, expected);
+        assertStatus(next, ReservationStatus.PENDING_APPROVAL);
+        assertAllAvailability("UNAVAILABLE");
+        org.mockito.Mockito.verify(notifications).notifyReservationChanged(org.mockito.ArgumentMatchers.argThat(r -> r.id() == id && r.status() == expected));
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {59, 60, 61})
+    void approvalDeadlineBoundaryAndReadOnlyAvailability(long elapsed) throws Exception {
+        long id = approvalDraft(true);
+        call("/reservations/" + id + "/confirm", user.getId());
+        TIME.set(NOW.plusSeconds(elapsed));
+        assertThat(decide(id, 3, "APPROVE").statusCode()).isEqualTo(elapsed < 60 ? 200 : 409);
+        assertStatus(id, elapsed < 60 ? ReservationStatus.CONFIRMED : ReservationStatus.EXPIRED);
+        assertAllAvailability(elapsed < 60 ? "UNAVAILABLE" : "AVAILABLE");
+    }
+
+    @Test
+    void dueExpirationIsResolvedForAvailabilityAndNewAcquisitionWithoutDecision() throws Exception {
+        long id = approvalDraft(true);
+        call("/reservations/" + id + "/confirm", user.getId());
+        TIME.set(NOW.plusSeconds(60));
+        assertAllAvailability("AVAILABLE");
+        assertStatus(id, ReservationStatus.EXPIRED);
+        long next = approvalDraft(true);
+        call("/reservations/" + next + "/confirm", user.getId());
+        TIME.set(NOW.plusSeconds(120));
+        long third = approvalDraft(true);
+        assertThat(call("/reservations/" + third + "/confirm", user.getId()).statusCode()).isEqualTo(200);
+        assertStatus(next, ReservationStatus.EXPIRED);
+        var read = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/reservations/" + third))
+            .header("X-User-Id", user.getId().toString()).GET().build();
+        try (var client = HttpClient.newHttpClient()) {
+            assertThat(client.send(read, HttpResponse.BodyHandlers.ofString()).statusCode()).isEqualTo(200);
+        }
+    }
+
+    @Test
+    void mixedConflictDoesNotPartiallyAllocate() throws Exception {
+        long normal = draft();
+        call("/reservations/" + normal + "/confirm", user.getId());
+        long mixed = approvalDraft(true);
+        assertThat(call("/reservations/" + mixed + "/confirm", user.getId()).statusCode()).isEqualTo(409);
+        assertStatus(mixed, ReservationStatus.DRAFT);
+        long approval = approvalDraft(false);
+        assertThat(call("/reservations/" + approval + "/confirm", user.getId()).statusCode()).isEqualTo(200);
+    }
+
+    @Test
+    void pendingDeadlineIsCappedAtScreeningAndDueCancelCannotOverwriteExpiration() throws Exception {
+        var seat = seats.save(new Seat("Hall A", 1, 3));
+        var target = screenings.save(new Screening("Near start", "Hall A", NOW.plusSeconds(20)));
+        var reservation = reservations.save(new Reservation(user, target, Set.of(seat), NOW.minusSeconds(3600)));
+        var response = call("/reservations/" + reservation.getId() + "/confirm", user.getId());
+        assertThat(Instant.parse(mapper.readTree(response.body()).get("approvalDeadline").asText())).isEqualTo(target.getStartsAt());
+        TIME.set(target.getStartsAt());
+        assertThat(call("/reservations/" + reservation.getId() + "/cancel", user.getId()).statusCode()).isEqualTo(409);
+        assertStatus(reservation.getId(), ReservationStatus.EXPIRED);
+        assertThat(decide(reservation.getId(), 3, "REJECT").statusCode()).isEqualTo(409);
+    }
+
+    @org.junit.jupiter.api.RepeatedTest(3)
+    void pendingConfirmCancelRaceLeavesNoHold() throws Exception {
+        long id = approvalDraft(true);
+        var results = race("/reservations/" + id + "/confirm", "/reservations/" + id + "/cancel");
+        assertThat(results.get(0)).isIn(200, 409);
+        assertThat(results.get(1)).isEqualTo(200);
+        assertStatus(id, ReservationStatus.CANCELLED);
+        assertAllAvailability("AVAILABLE");
+    }
+
+    @org.junit.jupiter.api.RepeatedTest(3)
+    void concurrentPendingConfirmationsHaveOneWinner() throws Exception {
+        long a = approvalDraft(true), b = approvalDraft(true);
+        assertThat(race("/reservations/" + a + "/confirm", "/reservations/" + b + "/confirm")).containsExactlyInAnyOrder(200, 409);
+        assertThat(reservations.findAll().stream().filter(r -> r.getStatus() == ReservationStatus.PENDING_APPROVAL).count()).isEqualTo(1);
+        assertAllAvailability("UNAVAILABLE");
+    }
+
+    @org.junit.jupiter.api.RepeatedTest(3)
+    void approvalCancelRaceNeverResurrects() throws Exception {
+        long id = approvalDraft(true);
+        call("/reservations/" + id + "/confirm", user.getId());
+        var gate = new java.util.concurrent.CyclicBarrier(2);
+        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            var approve = executor.submit(() -> { gate.await(); return decide(id, 3, "APPROVE").statusCode(); });
+            var cancel = executor.submit(() -> { gate.await(); return call("/reservations/" + id + "/cancel", user.getId()).statusCode(); });
+            assertThat(approve.get(20, java.util.concurrent.TimeUnit.SECONDS)).isIn(200, 409);
+            assertThat(cancel.get(20, java.util.concurrent.TimeUnit.SECONDS)).isEqualTo(200);
+        }
+        assertStatus(id, ReservationStatus.CANCELLED);
+        assertAllAvailability("AVAILABLE");
+    }
+
+    @org.junit.jupiter.api.RepeatedTest(3)
+    void approveRejectRaceHasOneDecisionAndOneNotification() throws Exception {
+        long id = approvalDraft(true);
+        call("/reservations/" + id + "/confirm", user.getId());
+        var gate = new java.util.concurrent.CyclicBarrier(2);
+        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            var approve = executor.submit(() -> { gate.await(); return decide(id, 3, "APPROVE").statusCode(); });
+            var reject = executor.submit(() -> { gate.await(); return decide(id, 3, "REJECT").statusCode(); });
+            assertThat(List.of(approve.get(20, java.util.concurrent.TimeUnit.SECONDS), reject.get(20, java.util.concurrent.TimeUnit.SECONDS))).containsExactlyInAnyOrder(200, 409);
+        }
+        var status = reservations.findById(id).orElseThrow().getStatus();
+        assertThat(status).isIn(ReservationStatus.CONFIRMED, ReservationStatus.REJECTED);
+        assertAllAvailability(status == ReservationStatus.CONFIRMED ? "UNAVAILABLE" : "AVAILABLE");
+        org.mockito.Mockito.verify(notifications, org.mockito.Mockito.times(1)).notifyReservationChanged(org.mockito.ArgumentMatchers.any());
     }
 
     private HttpResponse<String> post(String body) throws Exception {
