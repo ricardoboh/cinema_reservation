@@ -15,6 +15,16 @@ h2 { margin: 6px 0; font-size: 1.4rem; }
 .seat:enabled:hover { border-color: #bba5ff; }
 .seat[aria-pressed='true'] { background: #bba5ff; border-color: #d2c4ff; color: #201638; }
 .seat:disabled { opacity: .65; }
+.seat.unavailable { background: #452a30; border-color: #98545e; color: #ffd0ce; }
+.seat-row { flex-wrap: wrap; }
+.seat { width: 94px; }
+.seat span { font-size: .65rem; }
+.secondary-button { padding: 12px 18px; border: 1px solid #8996b0; border-radius: 9px; background: #26344a; color: #e9edf5; }
+.secondary-button:disabled { opacity: .5; cursor: not-allowed; }
+.current-reservation { padding: 0 26px 24px; }
+.current-reservation p { margin-top: 10px; }
+.reservation-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+.progress { margin: 0 26px 24px; color: #c9c4e0; }
 .reservation-summary { padding: 24px 26px; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
 h3 { font-size: .85rem; color: #aeb8ca; margin-bottom: 5px; font-weight: 500; }
 .reserve-button { padding: 12px 30px; background: #bba5ff; color: #201638; border: 0; border-radius: 9px; font-weight: 700; }

@@ -8,6 +8,9 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     strictPort: true,
-    proxy: { '/reservations': 'http://localhost:8080' },
+    proxy: {
+      '/reservations': 'http://localhost:8080',
+      '/screenings': 'http://localhost:8080',
+    },
   },
 })

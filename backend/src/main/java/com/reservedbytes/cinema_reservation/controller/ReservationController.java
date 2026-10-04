@@ -20,4 +20,14 @@ public class ReservationController {
     public ResponseEntity<CreateReservationResponse> create(@RequestBody CreateReservationRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
     }
+
+    @PostMapping("/{id}/confirm")
+    public ReservationResponse confirm(@PathVariable Long id, @RequestHeader("X-User-Id") Long userId) {
+        return service.confirm(id, userId);
+    }
+
+    @PostMapping("/{id}/cancel")
+    public ReservationResponse cancel(@PathVariable Long id, @RequestHeader("X-User-Id") Long userId) {
+        return service.cancel(id, userId);
+    }
 }

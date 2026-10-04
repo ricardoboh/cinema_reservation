@@ -41,6 +41,8 @@ class ReservationIntegrationTests {
     @Autowired JdbcTemplate jdbc;
     @Autowired PlatformTransactionManager transactionManager;
     @Autowired ObjectMapper mapper;
+    @org.springframework.test.context.bean.override.mockito.MockitoSpyBean
+    com.reservedbytes.cinema_reservation.service.NotificationService notifications;
 
     private User user;
     private Screening screening;
@@ -49,6 +51,7 @@ class ReservationIntegrationTests {
 
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.clearInvocations(notifications);
         reservations.deleteAll();
         seats.deleteAll();
         screenings.deleteAll();
@@ -111,10 +114,10 @@ class ReservationIntegrationTests {
     }
 
     @Test
-    void rejectsEntireRequestWhenOneSeatIsConfirmed() throws Exception {
+    void createsDraftEvenWhenOneSeatIsConfirmed() throws Exception {
         seedReservation(screening, ReservationStatus.CONFIRMED);
-        assertThat(post(request(user.getId(), screening.getId(), List.of(first.getId(), second.getId()))).statusCode()).isEqualTo(409);
-        assertThat(reservations.count()).isEqualTo(1);
+        assertThat(post(request(user.getId(), screening.getId(), List.of(first.getId(), second.getId()))).statusCode()).isEqualTo(201);
+        assertThat(reservations.count()).isEqualTo(2);
     }
 
     @Test
@@ -149,8 +152,123 @@ class ReservationIntegrationTests {
 
     private void seedReservation(Screening target, ReservationStatus status) {
         var saved = reservations.save(new Reservation(user, target, Set.of(first), NOW.minusSeconds(60)));
-        // Fixture only: confirmation/cancellation operations are intentionally outside this slice.
+        // Fixture only: seed state directly to isolate the behavior under test.
         jdbc.update("update reservation set status = ? where id = ?", status.name(), saved.getId());
+    }
+
+    private long draft() throws Exception {
+        return mapper.readTree(post(request(user.getId(), screening.getId(), List.of(first.getId()))).body()).get("id").asLong();
+    }
+
+    @Test
+    void notificationsAreInvokedForCommittedTransitionsOnly() throws Exception {
+        long id = draft();
+        org.mockito.Mockito.verifyNoInteractions(notifications);
+        assertThat(call("/reservations/" + id + "/confirm", user.getId()).statusCode()).isEqualTo(200);
+        assertThat(call("/reservations/" + id + "/confirm", user.getId()).statusCode()).isEqualTo(409);
+        assertThat(call("/reservations/" + id + "/cancel", user.getId()).statusCode()).isEqualTo(200);
+        assertThat(call("/reservations/" + id + "/cancel", user.getId()).statusCode()).isEqualTo(409);
+        org.mockito.Mockito.verify(notifications).notifyReservationChanged(org.mockito.ArgumentMatchers.argThat(r -> r.id() == id && r.status() == ReservationStatus.CONFIRMED));
+        org.mockito.Mockito.verify(notifications).notifyReservationChanged(org.mockito.ArgumentMatchers.argThat(r -> r.id() == id && r.status() == ReservationStatus.CANCELLED));
+        org.mockito.Mockito.verifyNoMoreInteractions(notifications);
+    }
+
+    private HttpResponse<String> call(String path, Long caller) throws Exception {
+        var builder = HttpRequest.newBuilder(URI.create("http://localhost:" + port + path));
+        if (caller == null) builder.GET();
+        else builder.header("X-User-Id", caller.toString()).POST(HttpRequest.BodyPublishers.noBody());
+        try (var client = HttpClient.newHttpClient()) {
+            return client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+        }
+    }
+
+    private String availability() throws Exception {
+        var response = call("/screenings/" + screening.getId() + "/availability", null);
+        assertThat(response.statusCode()).isEqualTo(200);
+        return mapper.readTree(response.body()).get(0).get("availability").asText();
+    }
+
+    @Test
+    void availabilityTracksOnlyConfirmedAndCancellationPreservesHistory() throws Exception {
+        long id = draft();
+        long competing = draft();
+        assertThat(availability()).isEqualTo("AVAILABLE");
+        assertThat(call("/screenings/999999/availability", null).statusCode()).isEqualTo(404);
+        var confirmed = call("/reservations/" + id + "/confirm", user.getId());
+        assertThat(confirmed.statusCode()).isEqualTo(200);
+        assertThat(mapper.readTree(confirmed.body()).get("status").asText()).isEqualTo("CONFIRMED");
+        assertThat(availability()).isEqualTo("UNAVAILABLE");
+        long alreadyAllocatedDraft = draft();
+        assertThat(call("/reservations/" + competing + "/confirm", user.getId()).statusCode()).isEqualTo(409);
+        assertThat(reservations.findById(competing).orElseThrow().getStatus()).isEqualTo(ReservationStatus.DRAFT);
+        assertThat(call("/reservations/" + id + "/confirm", user.getId()).statusCode()).isEqualTo(409);
+        assertThat(reservations.findById(id).orElseThrow().getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+        var cancelled = call("/reservations/" + id + "/cancel", user.getId());
+        assertThat(cancelled.statusCode()).isEqualTo(200);
+        assertThat(mapper.readTree(cancelled.body()).get("status").asText()).isEqualTo("CANCELLED");
+        assertThat(reservations.findById(id).orElseThrow().getCancelledAt()).isEqualTo(NOW);
+        assertThat(availability()).isEqualTo("AVAILABLE");
+        assertThat(call("/reservations/" + id + "/cancel", user.getId()).statusCode()).isEqualTo(409);
+        assertThat(call("/reservations/" + id + "/confirm", user.getId()).statusCode()).isEqualTo(409);
+        assertThat(reservations.findById(id).orElseThrow().getStatus()).isEqualTo(ReservationStatus.CANCELLED);
+        assertThat(call("/reservations/" + alreadyAllocatedDraft + "/confirm", user.getId()).statusCode()).isEqualTo(200);
+    }
+
+    @Test
+    void rejectsNonOwnersAndMissingReservationsWithoutChangingState() throws Exception {
+        long id = draft();
+        var other = users.save(new User());
+        for (String operation : List.of("confirm", "cancel")) {
+            assertThat(call("/reservations/" + id + "/" + operation, other.getId()).statusCode()).isEqualTo(403);
+            assertThat(call("/reservations/999999/" + operation, user.getId()).statusCode()).isEqualTo(404);
+            assertThat(reservations.findById(id).orElseThrow().getStatus()).isEqualTo(ReservationStatus.DRAFT);
+        }
+        assertThat(call("/reservations/" + id + "/cancel", user.getId()).statusCode()).isEqualTo(200);
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {1, 0, -1})
+    void confirmAndCancelRespectStartBoundary(long secondsUntilStart) throws Exception {
+        var target = screenings.save(new Screening("Boundary", "Hall A", NOW.plusSeconds(secondsUntilStart)));
+        for (var initial : List.of(ReservationStatus.DRAFT, ReservationStatus.CONFIRMED)) {
+            var saved = reservations.save(new Reservation(user, target, Set.of(second), NOW.minusSeconds(3600)));
+            jdbc.update("update reservation set status = ? where id = ?", initial.name(), saved.getId());
+            int expected = secondsUntilStart > 0 ? 200 : 409;
+            assertThat(call("/reservations/" + saved.getId() + "/cancel", user.getId()).statusCode()).isEqualTo(expected);
+            assertThat(reservations.findById(saved.getId()).orElseThrow().getStatus())
+                .isEqualTo(expected == 200 ? ReservationStatus.CANCELLED : initial);
+        }
+        var saved = reservations.save(new Reservation(user, target, Set.of(first), NOW.minusSeconds(3600)));
+        assertThat(call("/reservations/" + saved.getId() + "/confirm", user.getId()).statusCode()).isEqualTo(secondsUntilStart > 0 ? 200 : 409);
+        assertThat(reservations.findById(saved.getId()).orElseThrow().getStatus())
+            .isEqualTo(secondsUntilStart > 0 ? ReservationStatus.CONFIRMED : ReservationStatus.DRAFT);
+    }
+
+    @org.junit.jupiter.api.RepeatedTest(5)
+    void concurrentConflictingConfirmationsHaveOneWinner() throws Exception {
+        long a = draft(), b = draft();
+        var results = race("/reservations/" + a + "/confirm", "/reservations/" + b + "/confirm");
+        assertThat(results).containsExactlyInAnyOrder(200, 409);
+        assertThat(reservations.findAll().stream().filter(r -> r.getStatus() == ReservationStatus.CONFIRMED).count()).isEqualTo(1);
+    }
+
+    @org.junit.jupiter.api.RepeatedTest(5)
+    void concurrentConfirmCancelLeavesCancelledAndNeverResurrects() throws Exception {
+        long id = draft();
+        var results = race("/reservations/" + id + "/confirm", "/reservations/" + id + "/cancel");
+        assertThat(results.get(0)).isIn(200, 409);
+        assertThat(results.get(1)).isEqualTo(200);
+        assertThat(reservations.findById(id).orElseThrow().getStatus()).isEqualTo(ReservationStatus.CANCELLED);
+        assertThat(availability()).isEqualTo("AVAILABLE");
+    }
+
+    private List<Integer> race(String a, String b) throws Exception {
+        var gate = new java.util.concurrent.CyclicBarrier(2);
+        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            var firstCall = executor.submit(() -> { gate.await(10, java.util.concurrent.TimeUnit.SECONDS); return call(a, user.getId()).statusCode(); });
+            var secondCall = executor.submit(() -> { gate.await(10, java.util.concurrent.TimeUnit.SECONDS); return call(b, user.getId()).statusCode(); });
+            return List.of(firstCall.get(20, java.util.concurrent.TimeUnit.SECONDS), secondCall.get(20, java.util.concurrent.TimeUnit.SECONDS));
+        }
     }
 
     private String request(Long userId, Long screeningId, List<Long> seatIds) throws Exception {
