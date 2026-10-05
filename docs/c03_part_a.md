@@ -82,7 +82,7 @@ flowchart TD
     
     Persist -->|"read/write"| DB
     Notif -->|"HTTP/API"| ExtNotif
-
+```
 ### A8. Formulujte jednu otázku pro další C03
 
 | Položka | Obsah |
