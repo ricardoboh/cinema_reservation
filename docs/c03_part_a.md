@@ -90,6 +90,4 @@ flowchart TD
 | **Otázka** | Kde a jak se musí provést autoritativní rozhodnutí o alokaci a potvrzení, aby pravidlo `BR-02` zůstalo zachováno i při souběžných požadavcích? |
 | **Doklad** | `findConflicts()` (čtení) a `save()` (zápis) jsou v AS-IS implementaci v `ReservationService` oddělené operace (tzv. time-of-check to time-of-use vulnerability) bez explicitního zámku. |
 | **Proč je důležitá** | Dle požadavku `REQ-04` a driveru na souběh nesmí systém při paralelním pokusu potvrdit stejné sedadlo dvakrát. Stávající AS-IS logika v aplikační vrstvě tento souběh nechrání. |
-    
-    Persist -->|read/write| DB
-    Notif -->|HTTP/API| ExtNotif
+
