@@ -62,6 +62,8 @@ Zvolená větev: **conflict exists → confirmation is rejected**[cite: 18]
 
 ### A7. AS-IS strukturální diagram
 
+### A7. AS-IS strukturální diagram
+
 ```mermaid
 flowchart TD
     subgraph AppCode [Application code]
@@ -70,14 +72,16 @@ flowchart TD
         Persist[Persistence<br>role: loads/persists state]
         Notif[Notification integration<br>role: sends notifications]
         
-        API -->|confirm(id)| Logic
-        Logic -->|load/save Reservation| Persist
-        Logic -->|send notification| Notif
+        API -->|"confirm(id)"| Logic
+        Logic -->|"load/save Reservation"| Persist
+        Logic -->|"send notification"| Notif
     end
     
     DB[(Reservation DB)]
     ExtNotif[Notification Service]
-```
+    
+    Persist -->|"read/write"| DB
+    Notif -->|"HTTP/API"| ExtNotif
 
 ### A8. Formulujte jednu otázku pro další C03
 
