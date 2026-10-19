@@ -21,12 +21,12 @@ public class ReservationService {
     private final org.springframework.context.ApplicationEventPublisher events;
     private final ExpirationService expiration;
     private final ApprovalPolicy policy;
-    private final Duration approvalTimeout;
+    private final PendingExpirationPolicy expirationPolicy;
 
     public ReservationService(ReservationRepository reservations, UserRepository users,
             ScreeningRepository screenings, SeatRepository seats, Clock clock,
             org.springframework.context.ApplicationEventPublisher events, ExpirationService expiration,
-            ApprovalPolicy policy, @org.springframework.beans.factory.annotation.Value("${demo.approval-timeout:PT60S}") Duration approvalTimeout) {
+            ApprovalPolicy policy, PendingExpirationPolicy expirationPolicy) {
         this.reservations = reservations;
         this.users = users;
         this.screenings = screenings;
@@ -35,8 +35,7 @@ public class ReservationService {
         this.events = events;
         this.expiration = expiration;
         this.policy = policy;
-        if (approvalTimeout.isZero() || approvalTimeout.isNegative()) throw new IllegalArgumentException("Demo approval timeout must be positive.");
-        this.approvalTimeout = approvalTimeout;
+        this.expirationPolicy = expirationPolicy;
     }
 
     @Transactional
@@ -97,8 +96,7 @@ public class ReservationService {
         }
         if (required.isEmpty()) reservation.confirm();
         else {
-            var deadline = now.plus(approvalTimeout);
-            if (deadline.isAfter(reservation.getScreening().getStartsAt())) deadline = reservation.getScreening().getStartsAt();
+            var deadline = expirationPolicy.deadline(now, reservation.getScreening().getStartsAt());
             reservation.requestApproval(now, deadline, required, ApprovalPolicy.DEMO_APPROVER_ID);
         }
         var response = ReservationResponse.from(reservation);
@@ -114,7 +112,7 @@ public class ReservationService {
             throw new ReservationException(HttpStatus.CONFLICT, "Only DRAFT, PENDING_APPROVAL or CONFIRMED reservations can be cancelled.");
         }
         var now = clock.instant();
-        expireAtIfDue(reservation, now);
+        expiration.expireIfDueLocked(reservation, now);
         if (reservation.getStatus() == ReservationStatus.EXPIRED) {
             throw new ReservationException(HttpStatus.CONFLICT, "Approval deadline has been reached.");
         }
@@ -176,7 +174,7 @@ public class ReservationService {
             throw new ReservationException(HttpStatus.CONFLICT, "Exclusive pending hold invariant failed; investigation required.");
         }
         var now = clock.instant();
-        expireAtIfDue(reservation, now);
+        expiration.expireIfDueLocked(reservation, now);
         if (reservation.getStatus() == ReservationStatus.EXPIRED) {
             throw new ReservationException(HttpStatus.CONFLICT, "Approval deadline has been reached.");
         }
@@ -190,13 +188,6 @@ public class ReservationService {
         return reservations.countOtherAllocations(reservation.getScreening().getId(), reservation.getId(),
             reservation.getSeats().stream().map(Seat::getId).toList(),
             java.util.Set.of(ReservationStatus.PENDING_APPROVAL, ReservationStatus.CONFIRMED)) > 0;
-    }
-
-    private void expireAtIfDue(Reservation reservation, java.time.Instant now) {
-        if (reservation.getStatus() == ReservationStatus.PENDING_APPROVAL && !now.isBefore(reservation.getApprovalDeadline())) {
-            reservation.expire();
-            events.publishEvent(ReservationResponse.from(reservation));
-        }
     }
 
     private void requireBeforeStart(Reservation reservation) {

@@ -408,6 +408,41 @@ class ReservationIntegrationTests {
         }
     }
 
+    @Autowired com.reservedbytes.cinema_reservation.service.ExpirationService expirationService;
+
+    @Test
+    void c05RepeatedWorkerCommitsOneExpirationAndReleasesWholeHold() throws Exception {
+        long id = approvalDraft(true);
+        assertThat(call("/reservations/" + id + "/confirm", user.getId()).statusCode()).isEqualTo(200);
+        TIME.set(NOW.plusSeconds(90));
+        expirationService.expireScreening(screening.getId());
+        expirationService.expireScreening(screening.getId());
+        assertStatus(id, ReservationStatus.EXPIRED);
+        assertThat(reservations.findById(id).orElseThrow().getExpiredAt()).isEqualTo(NOW.plusSeconds(60));
+        assertAllAvailability("AVAILABLE");
+        org.mockito.Mockito.verify(notifications, org.mockito.Mockito.times(1)).notifyReservationChanged(
+            org.mockito.ArgumentMatchers.argThat(r -> r.id() == id && r.status() == ReservationStatus.EXPIRED));
+    }
+
+    @Test
+    void c05RollbackRestoresPendingAndSuppressesExpirationNotification() throws Exception {
+        long id = approvalDraft(true);
+        assertThat(call("/reservations/" + id + "/confirm", user.getId()).statusCode()).isEqualTo(200);
+        TIME.set(NOW.plusSeconds(60));
+        new TransactionTemplate(transactionManager).executeWithoutResult(tx -> {
+            expirationService.expireScreening(screening.getId());
+            assertStatus(id, ReservationStatus.EXPIRED);
+            tx.setRollbackOnly();
+        });
+        assertStatus(id, ReservationStatus.PENDING_APPROVAL);
+        assertThat(reservations.findById(id).orElseThrow().getExpiredAt()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(notifications);
+        expirationService.expireScreening(screening.getId());
+        assertStatus(id, ReservationStatus.EXPIRED);
+        org.mockito.Mockito.verify(notifications).notifyReservationChanged(
+            org.mockito.ArgumentMatchers.argThat(r -> r.id() == id && r.status() == ReservationStatus.EXPIRED));
+    }
+
     @Test
     void mixedConflictDoesNotPartiallyAllocate() throws Exception {
         long normal = draft();
