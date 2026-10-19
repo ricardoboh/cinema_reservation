@@ -1,80 +1,214 @@
-## Build and Run
+# Cinema Reservation System — Baseline v0.2
 
-For the C02 operations, fixtures and Swagger examples, see
-[backend/MANUAL-TESTING.md](backend/MANUAL-TESTING.md).
-Source of truth: [Baseline v0.2](docs/c02_baseline_specification_v0.2.md). See [frontend/README.md](frontend/README.md) for the React/Vite demo.
+Spring Boot backend, React/Vite frontend, and embedded H2 database. **Use the
+`dev` profile for the runnable demo**: it supplies the users, screenings and seats
+expected by the frontend. No database server or separate Maven installation is needed.
 
-### Requirements
+Current requirements: [Baseline v0.2](docs/c02_baseline_specification_v0.2.md).
+See [the manual testing guide](backend/MANUAL-TESTING.md) for fixtures and flows A–F,
+and [the frontend guide](frontend/README.md) for UI behavior.
+The original C01 description is preserved below as historical documentation;
+Baseline v0.2 describes the current lifecycle, including approval and expiration.
 
-- Java 21
-- Git
+## Prerequisites
 
-The project uses Maven Wrapper, so a separate Maven installation is not required.
+- JDK 21 or newer (Java 21 is the project's compilation target); `java` must be on PATH.
+- Node.js 22.12 or newer, with npm. The locked Vite version also accepts Node 20.19+ in the 20.x line.
+- Git; Windows users can use PowerShell or Git Bash.
+- Internet access on the first build/install to download Maven and dependencies.
 
-### Clone the repository
+Check with `java -version`, `node --version`, and `git --version`.
+For npm use `npm.cmd --version` in PowerShell or `npm --version` in Git Bash.
+Set `JAVA_HOME` to your JDK if the Maven Wrapper cannot find Java.
+
+## Clone
 
 ```bash
 git clone https://github.com/ricardoboh/cinema_reservation.git
-cd cinema_reservation/backend
+cd cinema_reservation
 ```
 
-### Build the project
+Use two terminals: one for the backend and one for the frontend. Start each in
+the cloned repository root. Leave both servers running while using the demo.
 
-#### Windows
+## 1. Build and start the backend
 
-```bash
+### Windows PowerShell
+
+```powershell
+cd backend
 .\mvnw.cmd clean package
+java -jar target/cinema-reservation-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
 ```
 
-#### Linux / macOS
+### Git Bash (also Linux/macOS)
 
 ```bash
-./mvnw clean package
+cd backend
+bash ./mvnw clean package
+java -jar target/cinema-reservation-0.0.1-SNAPSHOT.jar --spring.profiles.active=dev
 ```
 
-A successful build should finish with:
+`bash ./mvnw` works even when the wrapper has no executable permission.
+The wrapper downloads the Maven version pinned in `backend/.mvn/wrapper/`.
+`clean package` runs the automated tests and produces the executable JAR;
+wait for `BUILD SUCCESS` before running it.
 
-```text
-BUILD SUCCESS
+Alternatively, run directly through Maven from `backend` (choose this **instead
+of** the JAR command, so that only one backend uses port 8080):
+
+```powershell
+# PowerShell
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"
 ```
-
-### Run tests
-
-#### Windows
 
 ```bash
+# Git Bash
+bash ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+Wait for the startup log to show the active `dev` profile and the application
+started on port `8080` before opening the frontend.
+
+## 2. Install and start the frontend
+
+In the second terminal, from the repository root:
+
+```powershell
+# PowerShell
+cd frontend
+npm.cmd ci
+npm.cmd run dev
+```
+
+```bash
+# Git Bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Use `npm ci` to install the versions recorded in `package-lock.json`.
+Open **http://127.0.0.1:5173** in your browser. Vite binds to `127.0.0.1:5173`
+and proxies `/screenings` and `/reservations` to `http://localhost:8080`.
+No CORS configuration or frontend API environment variable is needed for this setup.
+Stop each server with Ctrl+C in its terminal. Restarting the dev backend resets demo data.
+
+## H2 profiles and automatic demo data
+
+| Profile | Database | Schema and data behavior |
+|---|---|---|
+| `dev` (recommended demo) | `jdbc:h2:mem:cinema-dev;DB_CLOSE_DELAY=-1` | Hibernate creates the schema, then Spring runs `dev-data.sql` automatically. Disposable; resets when the backend process restarts. |
+| Default (no profile) | `jdbc:h2:file:./data/cinema-reservation` | Hibernate updates the schema; data persists relative to the backend working directory. No demo fixtures are loaded. |
+
+The dev profile uses `create-drop`, deferred datasource initialization and SQL
+initialization enabled explicitly. Do not import SQL manually. It seeds users
+1–3, screenings 1–3, four Hall A seats (IDs 1–4), and historical reservations
+100/101 for screening 3. Screening 1 starts one day after initialization and is
+the frontend demo screening. Screening 2 is inside the creation cutoff;
+screening 3 has already started. Seats 1/2 confirm directly; seats 3/4 require
+approval. See the manual guide for the full fixture policy.
+
+The default profile can start successfully while the frontend fails to load its
+expected screening. Restart with `dev` to use the demo. Automated tests have a
+separate in-memory `cinema-test` database configured in test resources.
+
+## Local URLs and seat verification
+
+| Purpose | URL |
+|---|---|
+| React application | http://127.0.0.1:5173 |
+| Backend seat availability | http://localhost:8080/screenings/1/availability |
+| Same API through Vite | http://127.0.0.1:5173/screenings/1/availability |
+| Swagger UI | http://localhost:8080/swagger-ui/index.html |
+| OpenAPI JSON | http://localhost:8080/v3/api-docs |
+
+The backend root `/` is not the React application; use port 5173 for the UI.
+
+On a fresh dev start, open the React application and click **Check Availability**.
+Expect four seats in row 1, all available, with approval labels on seats 3/4.
+In browser developer tools → Network, the request to
+`/screenings/1/availability` should return HTTP 200 with four seat records.
+
+You can also compare the direct API and Vite proxy in PowerShell:
+
+```powershell
+Invoke-RestMethod http://localhost:8080/screenings/1/availability | ConvertTo-Json -Depth 6
+Invoke-RestMethod http://127.0.0.1:5173/screenings/1/availability | ConvertTo-Json -Depth 6
+```
+
+Or in Git Bash:
+
+```bash
+curl -f http://localhost:8080/screenings/1/availability
+curl -f http://127.0.0.1:5173/screenings/1/availability
+```
+
+Both responses should contain the same seats. Availability changes as reservations
+are confirmed or held; restart the dev backend for a fresh fixture state.
+
+## Run checks
+
+From `backend`, run automated tests without packaging:
+
+```powershell
+# PowerShell
 .\mvnw.cmd test
 ```
 
-#### Linux / macOS
-
 ```bash
-./mvnw test
+# Git Bash
+bash ./mvnw test
 ```
 
-All automated tests should complete successfully.
+From `frontend`, after `npm ci`, run lint and the TypeScript/production build:
 
-### Run the application
-
-#### Windows
-
-```bash
-.\mvnw.cmd spring-boot:run
+```powershell
+# PowerShell
+npm.cmd run lint
+npm.cmd run build
 ```
 
-#### Linux / macOS
-
 ```bash
-./mvnw spring-boot:run
+# Git Bash
+npm run lint
+npm run build
 ```
 
-The Spring Boot application should start successfully on port `8080`.
+There is no frontend unit-test script. Use the seat check above for the basic
+integration smoke test. The [manual guide](backend/MANUAL-TESTING.md) also documents
+optional runtime and browser verification scripts and their prerequisites.
+`npm run build` creates `frontend/dist`; it does not start the demo servers.
 
-After the application has started, it should be available at:
+## Troubleshooting
 
-`http://localhost:8080`
+- **No seats / screening not found:** confirm the backend logs show `dev`, then
+  check the direct availability URL. Starting without a profile does not seed data.
+- **Connection refused / Vite proxy error:** wait for backend startup, check port
+  8080, and keep both terminals running. If the direct API works but the proxy
+  fails, check the Vite terminal and its configured target in `frontend/vite.config.ts`.
+- **Port already in use:** stop the previous server with Ctrl+C. Vite uses
+  `strictPort`, so it fails instead of silently choosing another port. Keep 8080
+  and 5173 available for the documented configuration.
+- **PowerShell says scripts are disabled for npm:** use `npm.cmd` as shown above;
+  no execution-policy change is needed.
+- **Java missing / invalid target release 21:** install a JDK 21 or newer and
+  check PATH and `JAVA_HOME`; reopen the terminal after updating them.
+- **Unsupported Node / missing frontend packages:** check the Node version, then
+  run `npm ci` in `frontend`. Do not use `npm install` to work around a lockfile error.
+- **Wrapper/dependency download fails:** check internet access and any required
+  corporate proxy settings. Keep the wrapper files and `.mvn` directory from Git.
+- **JAR locked during `clean package` on Windows:** stop the running backend
+  before rebuilding, then start the newly built JAR with `dev` again.
+- **Reservation returns 409:** a seat may be held/unavailable, the action may be
+  stale, or a screening cutoff may have passed. Refresh availability/status;
+  use screening 1 on a fresh dev instance for the basic demo.
 
+---
 
+The following C01 material is preserved for historical context. Its original
+state list and walking skeleton describe that milestone, not the full current
+Baseline v0.2 implementation.
 
 # C01 – Reservation System
 
