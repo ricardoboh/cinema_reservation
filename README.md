@@ -125,7 +125,12 @@ separate in-memory `cinema-test` database configured in test resources.
 
 The backend root `/` is not the React application; use port 5173 for the UI.
 
-On a fresh dev start, open the React application and click **Check Availability**.
+The redesigned frontend includes Home, Movies, movie details, booking,
+My reservations, a separate demo approver, and account preview pages, with
+persistent dark/light themes. See [the frontend guide](frontend/README.md) for
+the complete workflow and the distinction between live APIs and demo content.
+
+On a fresh dev start, open **http://127.0.0.1:5173/book/1** and click **Refresh seats**.
 Expect four seats in row 1, all available, with approval labels on seats 3/4.
 In browser developer tools → Network, the request to
 `/screenings/1/availability` should return HTTP 200 with four seat records.

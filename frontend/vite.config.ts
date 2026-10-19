@@ -9,7 +9,12 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      '/reservations': 'http://localhost:8080',
+      '/reservations': {
+        target: 'http://localhost:8080',
+        // The customer route shares a name with the API. Full-page navigation
+        // serves the SPA; fetch requests explicitly accept JSON.
+        bypass(req) { if (req.method === 'GET' && req.headers.accept?.includes('text/html')) return '/index.html' },
+      },
       '/screenings': 'http://localhost:8080',
     },
   },
