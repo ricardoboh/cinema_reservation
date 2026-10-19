@@ -1,0 +1,50 @@
+
+> swi_2027@1.0.0 verify
+> tsx src/verify.ts
+
+◇ injected env (2) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+
+=== Křečkomat – ověření Specification Baseline ===
+
+[PASS] V-01 – Platný Create vytvoří DRAFT
+[PASS] V-02 – Neplatný interval nebo pozdní Create je odmítnut
+[PASS] V-03 – Neexistující křeček je odmítnut
+[PASS] V-04 – CONFIRMED blokuje Create, DRAFT neblokuje
+[PASS] V-05 – Denní limit 20 + 10 projde, 20 + 11 neprojde
+[PASS] V-06 – Volný aktivní křeček je AVAILABLE
+[PASS] V-07 – Překryv s CONFIRMED je UNAVAILABLE
+[PASS] V-08 – Dotyk hranic intervalů není kolize
+[PASS] V-09 – DRAFT a CANCELLED dostupnost neblokují
+[PASS] V-10 – Neaktivní křeček a neplatné Availability vstupy
+[PASS] V-11 – Platný DRAFT přejde do CONFIRMED
+[PASS] V-12 – Kolize vzniklá po Create zabrání Confirm
+[PASS] V-13 – Confirm znovu ověřuje denní limit
+[PASS] V-14 – Souběžné konfliktní Confirm dovolí nejvýše jeden
+[PASS] V-15 – CONFIRMED/CANCELLED nelze znovu potvrdit
+[PASS] V-15A – Pozdní Confirm je odmítnut
+[PASS] V-15B – Selhání Notification Service při Confirm
+[PASS] V-16 – Včasný Cancel DRAFT
+[PASS] V-17 – Cancel CONFIRMED uvolní dostupnost
+[PASS] V-18 – Pozdní Cancel CONFIRMED je odmítnut
+[PASS] V-19 – Opakovaný Cancel je idempotentní
+[PASS] V-20 – Cizí student nemůže rezervaci zrušit
+[PASS] V-20A – Selhání Notification Service při Cancel
+[PASS] V-20B – Souběžný Confirm a Cancel stejného DRAFTu
+[PASS] V-21 – Správce schválí PENDING_APPROVAL
+[PASS] V-22 – REJECT uvolní termín
+[PASS] V-23 – Student nesmí rozhodovat o PENDING_APPROVAL
+[PASS] V-24 – Nelze rozhodnout CANCELLED, EXPIRED ani CONFIRMED
+[PASS] V-25 – PENDING_APPROVAL v start - 60 min expiruje
+[PASS] V-26 – PENDING_APPROVAL dvě hodiny před začátkem neexpiruje
+
+----------------------------------------
+PASS: 30
+FAIL: 0
+CELKEM: 30
+----------------------------------------
+
+npm notice
+npm notice New minor version of npm available! 11.8.0 -> 11.21.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.21.1
+npm notice To update run: npm install -g npm@11.21.1
+npm notice
