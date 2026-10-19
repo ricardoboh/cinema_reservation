@@ -1,0 +1,159 @@
+# C06 — Assessment Form (CZ)
+
+## Projekt
+
+- Hodnotící tým: **DOPLNIT skutečný název / členy hodnotícího týmu**.
+- Hodnocený tým: Křečkomat — Martin Kalus, Tomáš Kirnig, Petr Gála, Dennis Carnevale (README.md, sekce Tým).
+- Projekt: Křečkomat — Rezervační systém pro školního křečka; https://github.com/tomaskirnig/SWI_2027.
+- Assessed commit: `8050a3990c01b792a94bd01f361fce1409868391`.
+- Datum assessmentu: 19. 10. 2026.
+- Rozsah: obsah tohoto commitu, nikoli případné dokumenty či jiné větve, které nebyly předloženy. Před přidáním tohoto assessmentu byl výstup `git status --short` prázdný.
+- Zpracování: technická kontrola s pomocí Codex; rozhodnutí vlastníků ani identita hodnotitelů nejsou domýšleny.
+
+## Použitá zadání a oprava hodnocení
+
+Tato revize nahrazuje předchozí hodnocení podle skutečně dodaných původních zadání. Původní finding „chybí C04 měření“ je **REJECTED CANDIDATE**: dodaná zadání jej nepodporují. F1 níže nově označuje chybějící navazující návrh architektury; nejde o zachování původního nálezu pod jiným názvem.
+
+| Podklad | Jak se používá |
+|---|---|
+| `cv01.html` — vložené zadání C01 | Projektový základ; podle C06 se historický spike znovu nehodnotí, B1/B2 kontrolují současnou baseline a spustitelnost. |
+| `cv02.html` | Pouze Moodle obal s iframe na `SWI_C02_students_bilingual_v5(1).html`; samotné zadání uvnitř souboru není. Pro obsah C02 použita doplňkově verzovaná textová kopie `zadani_2.txt` v hodnoceném repozitáři. Shodu s cílem Moodle iframe nelze z obalu potvrdit. R1–R5 se zároveň opírají o explicitní instrukce C06 a konkrétní týmovou specifikaci. |
+| `SWI_C03_PartA_Tuesday_students_bilingual_v8.html` | AS-IS mapování A1–A8 jako první část společného bloku C03–C04. |
+| `SWI_C03_students_bilingual_v10.html` | Navazující návrh B–M: drivery, alternativy, ADR, TO-BE pohledy, delta a behavior/architecture verification. Podle upřesnění uživatele jde spolu s Part A o úkoly 3 a 4. |
+| `SWI_C05_Detailed_Design_students_toggle_v4.html` | DD jedné jednotky, contracts, strukturální UML, detailed sequence, nejméně 5 odvozených testů, zdůvodnění úrovně alespoň 2 testů a porovnání DD s kódem. |
+| C06 HTML a CZ formulář | Metoda assessmentu: konkrétní baseline, vzorek operace/pravidla a architektury/DD, důkazy v každém řádku, nejvýše 3 nálezy a skutečná reakce vlastníků. C06 výslovně zakazuje zpětně přidávat požadavky, které původní zadání neobsahovala. |
+
+**Řešení rozporu zadání:** C06 Q1–Q3 předpokládá samostatný blok Quality & Measurement. V dodaném společném zadání C03–C04 takový blok není. Proto jsou Q1–Q3 níže N/A s důvodem, nikoli NO za neodevzdané měření. Neznamená to, že úkol 4 je splněn: jeho skutečné architektonické požadavky jsou zohledněny v A1–A4, F1 a mapování B–M níže. Pokud vyučující doloží další platné zadání Quality & Measurement, tuto část je nutné znovu posoudit.
+
+## Převzetí a reprodukce
+
+Projekt byl získán přímo z repository; konkrétní commit je uveden výše. Samostatný ZIP nebyl předán. C06 umožňuje pracovat přímo s repository při zaznamenání commitu.
+
+Build: `npm ci`, následně `npm run build`. Spuštění: konfigurace PostgreSQL v `.env`, následně `npm start`; UI `http://localhost:3000`, API `/api/hamsters`. Návod: README.md, Instalace a nastavení / NPM Skripty. Lokální databáze musí před startem existovat; aplikace inicializuje tabulky, nikoli samotnou databázi.
+
+Nové ověření: Windows, Node.js v24.13.1, npm 11.8.0, PostgreSQL 16.12. `npm run build` prošlo. `npm run verify` prošlo s výsledkem **30 PASS / 0 FAIL** dne 19. 10. 2026 v samostatné lokální databázi `swi_c06_assessment_20261019`. Běžící aplikace používá jinou databázi `hamster_reservations`. První pokus o opakování testů byl zablokován síťovým omezením prostředí (EACCES); po povolení lokálního připojení byl běh úspěšný. EACCES není vada projektu.
+
+Pozor: `src/verify.ts`, funkce `resetDatabase()`, používá TRUNCATE. Ověřovací skript se má spouštět pouze nad testovací databází. Pro opakování nastavte v PowerShellu `$env:DB_NAME='swi_c06_assessment_20261019'` a použijte prázdné DATABASE_URL; neprázdné DATABASE_URL má v `src/db.ts` přednost.
+
+Podklady: C02 — `docs/reservation-specification.md`, `DIAGRAMS.md`, `src/verify.ts`; společné C03–C04 — `docs/architecture-and-decisions.md` (obsahuje Part A, navazující návrh B–M nenalezen); C05 — samostatné DD/evidence v předloženém commitu nenalezeny. Inventář verzovaných souborů: `C06_baseline_files.txt`; build a testy: `C06_build.txt`, `C06_tests.txt` v dodaných výstupech. Odkazy na soubory níže jsou relativní ke kořeni posuzovaného repozitáře a vztahují se ke stanovenému commitu.
+
+## Baseline
+
+| ID | Odpověď | Evidence / komentář |
+|---|---|---|
+| B1 Stejná identifikovaná baseline pro docs/code/tests | YES | `git rev-parse HEAD` = uvedený plný commit; `git status --short` před assessmentem prázdný. `git ls-tree -r --name-only HEAD` obsahuje docs, src a `src/verify.ts` v jednom stromu. Historické názvy v0.1/v0.2 označují evoluci specifikace; aktuální rozšíření v0.2 je v témže commitu. |
+| B2 Relevantní produkt nebo testy lze spustit | YES | README.md, NPM Skripty; `package.json`, build/start/verify; nový build a nový běh testů 19. 10. 2026: 30 PASS / 0 FAIL (`C06_tests.txt`). V předchozím spuštění navíc HTTP 200 na `/` a katalog tří křečků na `/api/hamsters`. Lokální PostgreSQL je varianta výslovně povolená README. |
+
+## C02 — Engineering Specification
+
+Vybraná operace: **OP-03 Confirm Reservation**, včetně rozšíření v0.2.
+
+Vybraný business rule / invariant: **BR-02 — exkluzivita křečka**. Dvě časově se překrývající blokující rezervace stejného křečka nesmějí vzniknout ani souběžným potvrzováním. Blokující jsou CONFIRMED a PENDING_APPROVAL; pouhý dotyk hranic polouzavřených intervalů není překryv. DRAFT, CANCELLED, REJECTED a EXPIRED neblokují.
+
+| ID | Odpověď | Evidence / komentář |
+|---|---|---|
+| R1 Operation: input + precondition + postcondition/state | YES | `docs/reservation-specification.md:156`, OP-03: ID rezervace, identita studenta, rozhodný čas; vlastní DRAFT, aktivní křeček, předstih alespoň 15 minut, bez kolize a překročení limitu. Úspěch mění tutéž rezervaci; odmítnutí ji nezmění. Sekce 4.1/4.2 výslovně doplňují větev DRAFT → PENDING_APPROVAL. |
+| R2 Business rule/invariant je jednoznačný | YES | `docs/reservation-specification.md`, BR-01 a rozšířený BR-02 v sekci 4.2 (od ř. 462); překryv je startA < endB a startB < endA, definované blokující stavy. `src/domain.ts`, `doIntervalsOverlap()`. |
+| R3 Operation/rule je konzistentní se state modelem | YES | Specifikace, BR-05 v0.2; `DIAGRAMS.md`, sekce 2.1 (od ř. 335); Confirm volí CONFIRMED nebo PENDING_APPROVAL, oba blokují. Koncové stavy a návrhy neblokují. Použita aktuální v0.2, nikoli samostatně historická v0.1. |
+| R4 Implementace odpovídá specifikované semantics | YES | `src/app.ts`, POST `/api/reservations/:id/confirm` → `src/service.ts:263`, `confirmReservation()`: transakce, zámek rezervace i křečka, vlastník/stav/čas, konflikt přes `findConflictingReservation()` (ř. 144) a `doIntervalsOverlap()`, kontrola limitu, změna a outbox, COMMIT. Inspekce vybrané cesty neodhalila rozpor BR-02. Nejde o tvrzení, že celý systém je bez chyb. |
+| R5 Existuje vhodná verification evidence | YES | `src/verify.ts:449`, V-12 ověřuje HTTP-like status 409 na service hranici a zachování DRAFT při kolizi; V-14 (ř. 516) skutečně spouští dva Confirm přes Promise.allSettled a kontroluje právě jedno CONFIRMED v DB; V-08 ověřuje dotyk hranic. V-11 úspěšné potvrzení. Všechny prošly při novém běhu. Jde o integrační testy service, nikoli HTTP E2E. |
+
+## C03 — Architecture
+
+Vybraná responsibility: orchestrace Confirm a transakční změna rezervace; owner **Reservation Service / src/service.ts**.
+
+Vybraná interaction: Reservation API → confirmReservation → PostgreSQL (kontroly, změna, outbox, COMMIT) → sendNotification. Dynamický průchod je popsán textově v A2 a A3, nikoli samostatným sequence diagramem.
+
+Vybrané decision: použití PostgreSQL transakcí a FOR UPDATE pro ochranu souběžného Confirm a přímého SQL přes `pg` bez ORM (Zdůvodnění volby stacku, A5/A6). Samostatné uzavřené ADR s porovnáním alternativ nebylo nalezeno; A8 je otevřená otázka, nikoli realizované rozhodnutí o Repository.
+
+| ID | Odpověď | Evidence / komentář |
+|---|---|---|
+| A1 Responsibility + owner jsou explicitní | YES | `docs/architecture-and-decisions.md:146`, A4 mapuje Reservation Service na `src/service.ts` a explicitně mu přiděluje transakci, kontroly, stav a outbox; A5 určuje vlastníka změny stavu. |
+| A2 Skutečný code ownership odpovídá architektuře | YES | `src/service.ts:263`, `confirmReservation()` tyto kroky provádí. SQL skutečně leží v service; A4 jeho kombinované odpovědnosti i absenci Repository otevřeně popisuje. Absence Repository sama není finding. |
+| A3 Dynamic interaction odpovídá skutečnému call path | PARTLY | AS-IS tabulka A2 (ř. 71) a textový chybový průchod A3 (ř. 122) odpovídají endpointu a Confirm: COMMIT na ř. 360, sendNotification na ř. 365, při kolizi ROLLBACK. Původní navazující zadání ale v H1 výslovně požaduje návrhový sekvenční diagram přijaté TO-BE architektury s alt větví; ten v baseline není. Textová shoda Part A nenahrazuje H1. Viz F1. |
+| A4 ADR/decision odpovídá současné implementaci | PARTLY | Obecná volba pg/transakcí je v kódu viditelná, ale povinné porovnání alternativ E1–E3 a uzavřené ADR F s negativními důsledky a podmínkou znovuotevření nebyly nalezeny. A8 obsahuje otázku pro budoucí návrh, nikoli přijaté ADR. Proto nelze potvrdit konformitu k přijatému návrhu jako celku. Viz F1. |
+
+## C04 — Quality & Measurement
+
+Quality concern / criterion: **v dodaném původním společném zadání C03–C04 nejsou požadovány jako samostatný Quality & Measurement výstup**. Uplatněno pravidlo C06 o zákazu nových zpětných požadavků. Architektonické drivery a jejich porovnání zůstávají povinné podle skutečného zadání B/E a jsou posouzeny ve F1.
+
+| ID | Odpověď | Evidence / komentář |
+|---|---|---|
+| Q1 Criterion je skutečně evaluable | N/A | `SWI_C03_students_bilingual_v10.html`, B–M a Definition of Done: vyžaduje drivery/alternativy/ADR/konformitu, nikoli samostatné quality measurement criterion. C06, Důležité pravidlo: nepřidávat nové požadavky. Platí pro předloženou sadu zadání. |
+| Q2 Measurement měří criterion ve správném contextu | N/A | Totéž společné zadání, E2/E3 a L1/L2: požaduje porovnání alternativ a ověření chování/architektury, nikoli samostatné měření nezadaného quality criterion. Jeho absenci nelze vykázat jako vadu. |
+| Q3 Decision odpovídá výsledku měření | N/A | Totéž zadání, F: decision musí vycházet z driverů a porovnání alternativ; tento skutečně požadovaný řetězec chybí a je zahrnut do A4/F1. Nehodnotí se nezadaný measurement řetězec. |
+
+## C05 — Detailed Design & Unit Verification
+
+Vybraná software unit: **nelze určit jednotku skutečně zvolenou týmem v C05**. `confirmReservation()` slouží pouze jako kontrolovaný vzorek již doložené C02/C03 implementace; bez podkladu ji nevydáváme za týmový výběr C05.
+
+| ID | Odpověď | Evidence / komentář |
+|---|---|---|
+| D1 Design intent je explicitní a pochopitelný | PARTLY | Architektura A2/A4/A5 a OP-03 vysvětlují Confirm, ale inventář a dokumentace neobsahují identifikovaný C05 DD ani výběr jednotky. Část návrhových informací existuje, úplnost C05 tím doložena není. Viz F2. |
+| D2 DD odpovídá skutečné implementaci | PARTLY | A2 versus `src/service.ts:263` jsou konzistentní (A2/A3 výše), ale chybí C05 DD a týmová jednotka, proti nimž by šlo porovnat významné contracts/algorithm C05. Viz F2. |
+| D3 Unit/component tests jsou odvoditelné z DD | NO | `src/verify.ts` obsahuje označení V-xx a dokumentace je výslovně eviduje jako C02; v baseline není dohledatelná C05 DD → unit/component test vazba. Nevyžaduje se jiný framework ani testy bez databáze; chybí doložení původu z DD. Viz F2. |
+| D4 Relevantní branches/boundaries/states/failures jsou ověřeny | PARTLY | Existující testy V-12/V-14/V-15A/V-15B pokrývají kolizi, souběh, pozdní potvrzení a selhání notifikace a prošly. Bez identifikovaného C05 DD nelze doložit, že jde o významné varianty právě navržené jednotky nebo že je pokryt celý její relevantní rozsah. Viz F2. |
+| D5 Vybraný test má smysluplný oracle/expected result | YES | Vybrán `src/verify.ts:449`, V-12: očekává status 409 a zachovaný DRAFT. Oracle lze nezávisle odvodit z `docs/reservation-specification.md:213`, V-12 a OP-03 odmítnutí bez změny. Používá `node:assert/strict`. Je to smysluplný existující test specifikace; YES se nevztahuje na chybějící C05 traceability (D3). |
+
+## Kontrola skutečně zadaných výstupů C03–C04 a C05
+
+Toto je stručné mapování zdrojů checklistu, nikoli další seznam findings. Posuzuje předloženou baseline; žádný požadovaný pattern, CI ani procento coverage se nepřidává.
+
+| Původní požadavek | Stav | Konkrétní evidence |
+|---|---|---|
+| Part A A1–A6: scénář, hlavní/chybový průchod, části, stav/pravidlo a závislosti | YES | `docs/architecture-and-decisions.md`, A1–A6; porovnáno s endpointem Confirm a `src/service.ts:263`. |
+| Part A A7–A8: AS-IS struktura a další otázka | YES | Tentýž dokument, A7 a A8; jednoduchý blokový diagram je zde povolená forma. |
+| Navazující B: 3–5 driverů s podklady a otázkou | PARTLY | `docs/evidence-and-evolution.md`, Architektonické drivery přenesené do C03: tři témata a odkazy na pravidla existují; úplné zpracování B a rozhodovací otázka u každého doloženy nejsou. |
+| C1/C2: doménový třídní model, odpovědnosti a grouping/separation | PARTLY | Part A A4 přiděluje moduly a odpovědnosti; v `DIAGRAMS.md` je C02 behavior, ne doménový třídní model. Navazující C2 grouping/separation tabulka není doložena. |
+| D: hlavní rozhodovací otázka | PARTLY | Part A A8 obsahuje konkrétní otázku oddělení orchestrace od SQL; není doložen její převod do vyhodnoceného rozhodnutí E/F. |
+| E1–E3 a F: dvě alternativy, porovnání, scenario walkthrough, uzavřené ADR | NO | Architektonický dokument končí A8; inventář baseline a `docs/evidence-and-evolution.md` neobsahují tyto výstupy. Obecné zdůvodnění stacku nezachycuje požadovaný proces rozhodnutí. |
+| G1–G4: context, TO-BE statická architektura, transition ownership, runtime mapping | PARTLY | AS-IS A5–A7 dokládají stav, ownera Confirm a závislosti; chybí sada přijatých TO-BE pohledů a úplné navazující mapování. AS-IS blokový diagram s DB není sám o sobě všechny G pohledy. |
+| H1/H2: návrhový sequence s alt větví a focused class diagram | NO | `DIAGRAMS.md` má use-case/state/activity diagramy; architektura má AS-IS tabulky a blokový diagram. Požadované sequence/class diagramy nenalezeny. |
+| I/J: cross-view kontrola a CHANGE/KEEP/VERIFY delta | NO | Ani v architektuře, ani v evidence dokumentu není odpovídající výstup. Není tím požadována samoúčelná změna kódu: validní delta může obsahovat KEEP/VERIFY. |
+| K/L1: implementace dle delty a behavior verification | PARTLY | Build a 30 scénářů fungují; bez doložené přijaté architektury a delty nelze ověřit jejich realizaci. |
+| L2/M: opakovatelný conformance check, evidence a commit | NO | `package.json` má build/dev/start/verify/spike, ale není doloženo konkrétní pravidlo odvozené z ADR/G2, jeho opakovatelná kontrola a výsledek; chybí C03 Architecture Evidence. Obecný build není automaticky kontrola konkrétního pravidla. |
+| C05 1–4: jednotka, detailní odpovědnosti, contracts, UML, metody a detailed sequence | PARTLY | OP-03 a AS-IS mapování obsahují použitelný dílčí popis; `docs/architecture-and-decisions.md` nemá C05 Detailed Design ani požadované focused UML a vnitřní sequence. |
+| C05 5: alespoň 5 testů odvozených z DD, vysvětlení úrovně alespoň 2 | NO | 30 C02 scénářů existuje, ale `src/verify.ts` a evidence nedokládají DD element → test level → test case ani zdůvodnění dvou úrovní. Počet testů sám nenahrazuje vazbu. |
+| C05 6 a evidence: planned DD versus code, resolution/risk a commit | NO | `docs/evidence-and-evolution.md` nemá C05 DD Verification Evidence ani tabulku DD decision / Implemented / Evidence / Action. |
+
+## Candidate findings
+
+Nalezeny dva významné findings; třetí není vyžadován. Jde o ověřené mezery evidence **v předložené baseline**, nikoli důkaz, že tým žádné další podklady nikdy nevytvořil. Případné dodání architektonického návrhu nebo C05 mimo tuto baseline může vést k novému assessmentu. N/A v Q řádcích vyplývá z nezadaného typu výstupu, nikoli z absence požadovaných podkladů.
+
+### F1 — Part A existuje, navazující návrh společného C03–C04 není doložen
+
+- Source: společná zadání Part A a `SWI_C03_students_bilingual_v10.html`, zejména E1–F, G–J, L2/M; C06 A3/A4.
+- Engineering claim: týmový `ROADMAP.md` deklaruje dokončenou **Část A**; netvrdí doložené dokončení celého C03–C04. Nález je chybějící povinná evidence navazující části, nikoli vyvrácení tvrzení o hotové Part A.
+- Expected: dvě materiálně odlišné alternativy k jedné otázce, porovnání proti driverům a stejnému scénáři, ADR s důsledky a reconsider-when, související TO-BE pohledy včetně H1/H2, cross-view kontrola, delta CHANGE/KEEP/VERIFY a opakovatelná kontrola konkrétního architektonického pravidla. Samotná Part A je výchozí podklad, nikoli náhrada tohoto návrhu.
+- Observed: `docs/architecture-and-decisions.md` končí otevřenou otázkou A8 (ř. 334); obsahuje AS-IS tabulky a blokový diagram. `docs/evidence-and-evolution.md` obsahuje C01/C02, nikoli C03 Architecture Evidence. `DIAGRAMS.md` obsahuje C02 use-case/state/activity diagramy, nikoli přijatý TO-BE sequence/class/runtime model. Inventář neobsahuje samostatný conformance check.
+- Evidence: uvedené soubory ve stanoveném commitu; `ROADMAP.md`, poslední sekce; `C06_baseline_files.txt`. HTML zadání uložené v repo není samo vypracované řešení.
+- Verification performed: porovnání skutečného obsahu dokumentů s E1–M, kontrola inventáře zdrojů a skriptů `package.json`, kontrola Confirm call path proti Part A. Funkční testy prošly, ale neověřují nenalezené architektonické pravidlo odvozené z ADR/G2.
+- Result: **VERIFIED FINDING — chybějící návrhová a conformance evidence v předloženém commitu**.
+
+### F2 — Chybí identifikovaný C05 detailed design a vazba na testy
+
+- Source: `SWI_C05_Detailed_Design_students_toggle_v4.html`, kroky 1–6 a Co odevzdáte; D1–D4; C06 oddíl 5.
+- Engineering claim: má být dohledatelná jednotka skutečně rozpracovaná v C05 a její DD → implementace → unit/component verification. Takový týmový C05 claim nebyl předložen.
+- Expected: skutečný výběr jednotky, její responsibilities/contracts/behavior, focused strukturální UML a detailed sequence; nejméně 5 testů odvozených z DD, u alespoň 2 zdůvodněná úroveň a tabulka DD versus implementace. Zadání vyžaduje sekce C05 Detailed Design a C05 DD Verification Evidence. Není požadován určitý pattern ani coverage procento.
+- Observed: existuje C02 specifikace, C03 AS-IS popis Confirm a 30 integračních scénářů, ale chybí identifikace C05 jednotky, C05 DD a explicitně dohledatelná návaznost jeho rozhodnutí na testy.
+- Evidence: inventář baseline; `docs/architecture-and-decisions.md`, A1–A8; `docs/evidence-and-evolution.md`, Evidence C02; `src/verify.ts`, V-11 až V-15B; `ROADMAP.md`, závěr C03 část A.
+- Verification performed: úplný inventář a čtení dokumentace; srovnání Confirm s architekturou a specifikací; inspekce assertions V-12 a V-14 a opakovaný úspěšný běh 30 scénářů. Ty prokazují funkční verification, nikoli existenci chybějící C05 DD.
+- Result: **VERIFIED FINDING — chybějící evidence v předloženém commitu**.
+
+## Owner disposition
+
+**Čeká na skutečné vyjádření vlastníků.** Níže není přijetí, odmítnutí ani odložení za tým. Stav PENDING je poznámka o procesu, nikoli pátá odpověď checklistu ani formální owner disposition.
+
+| Finding | ACCEPTED / REJECTED / DEFERRED | Reason/evidence | Action / no-change |
+|---|---|---|---|
+| F1 | PENDING — doplní vlastník | Doložit navazující návrh B–M společného C03–C04 a jeho baseline, případně potvrdit absenci. | Doplní vlastník: oprava evidence, odůvodněné no-change nebo další postup. |
+| F2 | PENDING — doplní vlastník | Doložit skutečnou C05 jednotku, DD a odpovídající testy, případně potvrdit absenci. | Doplní vlastník. |
+
+## Dokončení a předání
+
+1. Hodnotící tým doplní své jméno/členy a potvrdí s vlastníky, že commit výše je správně předaná C06 baseline. Tato kontrola neověřuje neodevzdané větve nebo školní přílohy mimo repo.
+2. Předloží vlastníkům F1 a F2. Pokud mají návrh C03–C04 nebo C05 jinde, vyžádá konkrétní soubor a revizi; na doplněné baseline upraví A/D a závěr findings podle důkazů. Případné další zadání Quality & Measurement je nutné ověřit s vyučujícím, nikoli automaticky vytýkat jeho nesplnění.
+3. Vlastníci sami vyplní disposition s důvodem a action/no-change. Do jejich existujícího `docs/evidence-and-evolution.md` doplní krátkou sekci `## C06 Internal Evidence Assessment`: Assessed baseline, Verified findings, Owner disposition, Actions / justified no-change decisions, Remaining evidence gaps.
+4. Checklist je uložen také v lokální kopii projektu jako `docs/c06-assessment.md`. Odevzdat jej společně s důkazy podle způsobu požadovaného vyučujícím. Nebyl proveden commit, push ani odeslání týmu.
+
+Technická část assessmentu nad poskytnutými podklady je hotová. Úplné C06 Definition of Done zatím není splněno: chybí identita hodnotícího týmu a skutečné owner disposition. Procházející testy samy o sobě nepotvrzují splnění společného C03–C04 ani C05. Přímý původní obsah C02 iframe nebyl předán; toto omezení je zaznamenáno výše.
