@@ -2,18 +2,18 @@ export const DEMO_USER_ID = 1
 export const DEMO_SCREENING_ID = 1
 export type SeatAvailability = { seatId: number; rowNumber: number; seatNumber: number; availability: 'AVAILABLE' | 'UNAVAILABLE'; approvalRequired: boolean }
 export type Reservation = {
-  id: number; status: 'DRAFT' | 'PENDING_APPROVAL' | 'CONFIRMED' | 'CANCELLED' | 'REJECTED' | 'EXPIRED'; seatIds: number[]
+  id: number; screeningId: number; status: 'DRAFT' | 'PENDING_APPROVAL' | 'CONFIRMED' | 'CANCELLED' | 'REJECTED' | 'EXPIRED'; seatIds: number[]
   approvalRequestedAt: string | null; approvalDeadline: string | null; approvalPolicy: string | null
   decision: string | null; decidedBy: number | null; decidedAt: string | null; expiredAt: string | null; cancelledAt: string | null
 }
 async function request(path: string, expected: number, options: RequestInit = {}): Promise<unknown> {
   let response: Response
-  try { response = await fetch(path, { ...options, signal: AbortSignal.timeout(15000) }) }
+  try { response = await fetch(path, { ...options, headers: { Accept: 'application/json', ...options.headers }, signal: AbortSignal.timeout(15000) }) }
   catch { throw new Error('Could not reach the API. Check the backend. A timed-out mutation may have succeeded; refresh before retrying.') }
   const body: unknown = await response.json().catch(() => null)
   if (response.status !== expected) {
     const detail = body && typeof body === 'object' && 'detail' in body && typeof body.detail === 'string' ? body.detail : 'Request failed.'
-    throw new Error(`${detail} (HTTP ${response.status})`)
+    throw new Error(detail.includes('already held') ? 'These seats are no longer available. Refresh availability and choose another seat, or cancel this draft.' : detail)
   }
   return body
 }
@@ -33,9 +33,10 @@ export async function loadReservation(id: number): Promise<Reservation> {
     || !('seatIds' in body) || !Array.isArray(body.seatIds) || !body.seatIds.every(positiveId)) throw new Error('Invalid reservation response; refresh before retrying.')
   return body as Reservation
 }
-export async function createReservation(seatIds: number[]): Promise<Reservation> {
+export async function createReservation(seatIds: number[], onCreated?: (id: number) => void): Promise<Reservation> {
   const body = await request('/reservations', 201, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: DEMO_USER_ID, screeningId: DEMO_SCREENING_ID, seatIds }) })
   if (!body || typeof body !== 'object' || !('id' in body) || !positiveId(body.id)) throw new Error('Created but no valid ID returned; check backend before retrying.')
+  onCreated?.(body.id)
   return loadReservation(body.id)
 }
 export async function changeReservation(id: number, operation: 'confirm' | 'cancel'): Promise<Reservation> {
