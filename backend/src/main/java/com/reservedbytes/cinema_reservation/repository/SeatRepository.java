@@ -4,6 +4,7 @@ import com.reservedbytes.cinema_reservation.model.Seat;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SeatRepository extends JpaRepository<Seat, Long> {
-    java.util.List<Seat> findByHallOrderByRowNumberAscSeatNumberAsc(String hall);
+    java.util.List<Seat> findByCinemaHallIdOrderByRowNumberAscSeatNumberAsc(Long hallId);
+ java.util.List<Seat> findByHallOrderByRowNumberAscSeatNumberAsc(String hall);
 }
 

@@ -1,8 +1,0 @@
-export type Movie = { id: string; title: string; category: string; duration: string; art: string; tagline: string; description: string; live?: boolean }
-export const movies: Movie[] = [
-  { id: 'demo', title: 'CP1 Demo Movie', category: 'Special presentation', duration: 'Runtime not supplied', art: 'orbit', tagline: 'Every great story begins with a seat.', description: 'Our special presentation brings the cinema experience to life. Choose your place in Hall A and try the complete reservation journey, from your first selection to the final confirmation.', live: true },
-  { id: 'beyond', title: 'Beyond the Silence', category: 'Sci-fi · Adventure', duration: '124 min · Editorial', art: 'planet', tagline: 'Some discoveries change everything.', description: 'An imagined journey to the edge of the known universe. This editorial concept is part of our frontend showcase; there is no persisted movie or bookable screening.' },
-  { id: 'last-light', title: 'The Last Light', category: 'Drama · Mystery', duration: '108 min · Editorial', art: 'sunset', tagline: 'Find your way back to wonder.', description: 'A cinematic concept about the places we leave behind. An editorial preview created for this university presentation, with no bookable screening.' },
-  { id: 'after-hours', title: 'After Hours', category: 'Thriller · Crime', duration: '116 min · Editorial', art: 'city', tagline: 'The city has a story to tell.', description: 'One night. A thousand possibilities. This fictional editorial preview demonstrates the catalog design and is not connected to a backend screening.' },
-]
-export const fixtureTitle = (id: number) => id === 1 ? 'CP1 Demo Movie' : id === 2 ? 'C02 Cutoff Demo' : id === 3 ? 'C02 Started Demo' : `Screening ${id}`

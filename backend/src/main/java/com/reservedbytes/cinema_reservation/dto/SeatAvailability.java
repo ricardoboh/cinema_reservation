@@ -1,3 +1,3 @@
 package com.reservedbytes.cinema_reservation.dto;
 
-public record SeatAvailability(Long seatId, int rowNumber, int seatNumber, String availability, boolean approvalRequired) {}
+public record SeatAvailability(Long seatId, int rowNumber, int seatNumber, String availability, boolean approvalRequired, String seatType) {}

@@ -17,6 +17,7 @@ public class ReservationService {
     private final UserRepository users;
     private final ScreeningRepository screenings;
     private final SeatRepository seats;
+    private final CinemaHallRepository halls;
     private final Clock clock;
     private final org.springframework.context.ApplicationEventPublisher events;
     private final ExpirationService expiration;
@@ -26,7 +27,8 @@ public class ReservationService {
     public ReservationService(ReservationRepository reservations, UserRepository users,
             ScreeningRepository screenings, SeatRepository seats, Clock clock,
             org.springframework.context.ApplicationEventPublisher events, ExpirationService expiration,
-            ApprovalPolicy policy, PendingExpirationPolicy expirationPolicy) {
+            ApprovalPolicy policy, PendingExpirationPolicy expirationPolicy, CinemaHallRepository halls) {
+        this.halls = halls;
         this.reservations = reservations;
         this.users = users;
         this.screenings = screenings;
@@ -50,13 +52,15 @@ public class ReservationService {
         }
         var user = users.findById(request.userId()).orElseThrow(() ->
             new ReservationException(HttpStatus.NOT_FOUND, "User not found."));
-        var screening = screenings.findById(request.screeningId()).orElseThrow(() ->
+        screenings.findHallId(request.screeningId()).ifPresent(halls::lockById);
+        var screening = screenings.findLockedById(request.screeningId()).orElseThrow(() ->
             new ReservationException(HttpStatus.NOT_FOUND, "Screening not found."));
-        var selectedSeats = seats.findAllById(request.seatIds());
+        if(screening.isCancelled() || (screening.getCinemaHall()!=null && !screening.getCinemaHall().isActive())) throw new ReservationException(HttpStatus.CONFLICT,"Screening unavailable.");
+var selectedSeats = seats.findAllById(request.seatIds());
         if (selectedSeats.size() != request.seatIds().size()) {
             throw new ReservationException(HttpStatus.NOT_FOUND, "Seat not found.");
         }
-        if (selectedSeats.stream().anyMatch(seat -> !seat.getHall().equals(screening.getHall()))) {
+        if (selectedSeats.stream().anyMatch(seat -> !seat.isActive() || (screening.getCinemaHall()!=null ? seat.getCinemaHall()==null || !seat.getCinemaHall().getId().equals(screening.getCinemaHall().getId()) : !seat.getHall().equals(screening.getHall())))) {
             throw new ReservationException(HttpStatus.BAD_REQUEST, "Seats must belong to the screening hall.");
         }
         var now = clock.instant();
@@ -72,9 +76,9 @@ public class ReservationService {
         var screening = screenings.findLockedById(screeningId).orElseThrow(() ->
             new ReservationException(HttpStatus.NOT_FOUND, "Screening not found."));
         var allocated = reservations.findActiveSeatIds(screeningId, clock.instant());
-        return seats.findByHallOrderByRowNumberAscSeatNumberAsc(screening.getHall()).stream()
+        return (screening.getCinemaHall()==null ? seats.findByHallOrderByRowNumberAscSeatNumberAsc(screening.getHall()) : seats.findByCinemaHallIdOrderByRowNumberAscSeatNumberAsc(screening.getCinemaHall().getId())).stream()
             .map(s -> new SeatAvailability(s.getId(), s.getRowNumber(), s.getSeatNumber(),
-                allocated.contains(s.getId()) ? "UNAVAILABLE" : "AVAILABLE", policy.requiresApproval(s))).toList();
+                !s.isActive() || screening.isCancelled() ? "DISABLED" : allocated.contains(s.getId()) ? "UNAVAILABLE" : "AVAILABLE", policy.requiresApproval(s), s.getSeatType().name())).toList();
     }
 
     @Transactional(noRollbackFor = ReservationException.class)
@@ -191,7 +195,7 @@ public class ReservationService {
     }
 
     private void requireBeforeStart(Reservation reservation) {
-        if (!clock.instant().isBefore(reservation.getScreening().getStartsAt())) {
+        if (reservation.getScreening().isCancelled() || !clock.instant().isBefore(reservation.getScreening().getStartsAt())) {
             throw new ReservationException(HttpStatus.CONFLICT, "Screening has already started.");
         }
     }

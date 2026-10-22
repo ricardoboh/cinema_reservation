@@ -15,6 +15,12 @@ public class Screening {
     private String hall;
     @Column(nullable = false)
     private Instant startsAt;
+@ManyToOne @JoinColumn(name="movie_id") private Movie movieEntity;
+@ManyToOne @JoinColumn(name="hall_id") private CinemaHall cinemaHall;
+private Instant endsAt; private boolean cancelled=false;
+public Screening(Movie m,CinemaHall h,Instant start){configure(m,h,start);}
+public void configure(Movie m,CinemaHall h,Instant start){movieEntity=m;cinemaHall=h;movie=m.getTitle();hall=h.getName();startsAt=start;endsAt=start.plusSeconds(m.getDurationMinutes()*60L);}
+public void cancelScreening(){cancelled=true;}
 
     protected Screening() {}
 
