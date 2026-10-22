@@ -144,3 +144,8 @@ For browser verification, start a headless Chromium/Edge with debugging port
 9222, then run `node frontend/verify-ui.mjs` from the repository root. This uses
 Node's built-in WebSocket and CDP, adds no frontend dependencies, and writes
 ignored screenshots/network evidence to backend/target.
+
+
+## Phase 1 fixtures and management
+
+The old four-seat SQL fixtures described above are historical. For current startup, management endpoints, realistic halls, VIP policy and booking checks, see [Cinema management](../docs/cinema-management.md).

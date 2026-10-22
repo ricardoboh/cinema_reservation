@@ -46,7 +46,7 @@ public class Reservation {
         approvalDeadline = deadline;
         approvalRequiredSeatIds = new LinkedHashSet<>(requiredSeats);
         authorizedApproverId = approver;
-        approvalPolicy = "C02-DEMO-v1: seat numbers 3 and 4; Approver 3";
+        approvalPolicy = "DEMO-v2: VIP seats (legacy seats 3/4); Approver 3";
     }
 
     public void decide(String decision, Long approver, Instant now) {

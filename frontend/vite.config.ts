@@ -16,6 +16,8 @@ export default defineConfig({
         bypass(req) { if (req.method === 'GET' && req.headers.accept?.includes('text/html')) return '/index.html' },
       },
       '/screenings': 'http://localhost:8080',
+'/halls': 'http://localhost:8080',
+'/movies': {target:'http://localhost:8080', bypass(req) { if(req.method==='GET'&&req.headers.accept?.includes('text/html')) return '/index.html' }},
     },
   },
 })

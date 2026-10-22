@@ -9,6 +9,6 @@ public class ApprovalPolicy {
     public static final Long DEMO_APPROVER_ID = 3L;
 
     public boolean requiresApproval(Seat seat) {
-        return seat.getSeatNumber() == 3 || seat.getSeatNumber() == 4;
+        return seat.getCinemaHall()!=null ? seat.getSeatType()==Seat.SeatType.VIP : seat.getSeatNumber() == 3 || seat.getSeatNumber() == 4;
     }
 }

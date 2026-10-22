@@ -12,6 +12,8 @@ public class ApiExceptionHandler {
             .body(ProblemDetail.forStatusAndDetail(exception.getStatus(), exception.getMessage()));
     }
 
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+ public ResponseEntity<ProblemDetail> integrity(Exception e){return ResponseEntity.status(409).body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,"Duplicate name/seat position or referenced record."));}
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ProblemDetail> handleInvalidJson(HttpMessageNotReadableException exception) {
         return ResponseEntity.badRequest()

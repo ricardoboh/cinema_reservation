@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
+boolean existsByScreeningId(Long id); boolean existsByScreeningCinemaHallId(Long id); boolean existsBySeatsId(Long id);
     java.util.List<Reservation> findByScreeningIdAndStatus(Long screeningId, ReservationStatus status);
 
     @Query("select distinct r.screening.id from Reservation r where r.status = :status")
