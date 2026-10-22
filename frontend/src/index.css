@@ -1,22 +1,22 @@
 :root {
   font-family:'Segoe UI',Arial,sans-serif;
-  color:#f3f1f8;
-  background:#101014;
+  color:#F2EEE5;
+  background:#0B0D12;
   font-synthesis:none;
   text-rendering:optimizeLegibility;
   -webkit-font-smoothing:antialiased;
   line-height:1.6;
   color-scheme:dark;
-  --bg:#101014;
-  --surface:#19191f;
-  --surface-2:#202027;
-  --text:#f3f1f8;
-  --muted:#a6a5b3;
-  --border:#303038;
-  --accent:#b9a0ff;
-  --accent-solid:#7951d5;
-  --accent-soft:#292137;
-  --header:#101014f2;
+  --bg:#0B0D12;
+  --surface:#12161E;
+  --surface-2:#1B202A;
+  --text:#F2EEE5;
+  --muted:#A4A6AF;
+  --border:#2C3038;
+  --accent:#C9A646;
+  --accent-solid:#C9A646;
+  --accent-soft:#242219;
+  --header:#0B0D12f2;
   --success:#9de5bf;
   --warning:#f4ce88;
   --danger:#ffa9b6;
@@ -24,16 +24,16 @@
 }
 :root[data-theme=light] {
   color-scheme:light;
-  --bg:#faf9f6;
+  --bg:#F7F5F0;
   --surface:#fff;
-  --surface-2:#f1efeb;
-  --text:#24212d;
-  --muted:#686471;
-  --border:#e0dce5;
-  --accent:#6740b5;
-  --accent-solid:#7045c5;
-  --accent-soft:#eee7fa;
-  --header:#faf9f6f2;
+  --surface-2:#EEECE5;
+  --text:#25272B;
+  --muted:#62656D;
+  --border:#DCD8CE;
+  --accent:#806015;
+  --accent-solid:#806015;
+  --accent-soft:#F1EBD9;
+  --header:#F7F5F0f2;
   --success:#216540;
   --warning:#80531b;
   --danger:#ad2945;
@@ -84,9 +84,10 @@ h1,h2,h3,p {
   margin:0
 }
 h1,h2,h3 {
+  font-family:Georgia,'Times New Roman',serif;
   line-height:1.15;
   letter-spacing:-.035em;
-  font-weight:650
+  font-weight:400
 }
 h1 {
   font-size:clamp(2rem,4.2vw,3.65rem)
@@ -109,7 +110,7 @@ input {
   min-width:0;
   background:var(--surface);
   border:1px solid var(--border);
-  border-radius:9px;
+  border-radius:3px;
   padding:12px 15px;
   color:var(--text)
 }
