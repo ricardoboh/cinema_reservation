@@ -1,0 +1,80 @@
+{
+  "verificationMetadata": {
+    "suite": "Cinema Reservation System - Automated Runtime Verification",
+    "baselineVersion": "v0.2",
+    "environment": "Local Development / Demo Baseline",
+    "targetUrl": "http://localhost:8081",
+    "timestamp": "2026-10-19T14:25:00+02:00",
+    "executedBy": "Team Deadlock",
+    "runnerScript": "verify-baseline.ps1",
+    "totalRequestsExecuted": 43,
+    "overallStatus": "PASS"
+  },
+  "scenarios": [
+    {
+      "id": "SCENARIO-A",
+      "name": "Direct Confirmation & Cancellation (Standard Seats)",
+      "status": "PASS",
+      "tests": [
+        { "name": "Create Draft Reservation", "httpStatus": 201, "expectedState": "DRAFT", "result": "PASS" },
+        { "name": "Confirm Standard Seats", "httpStatus": 200, "expectedState": "CONFIRMED", "result": "PASS" },
+        { "name": "Cancel Confirmed Reservation", "httpStatus": 200, "expectedState": "CANCELLED", "result": "PASS" }
+      ]
+    },
+    {
+      "id": "SCENARIO-B",
+      "name": "Mixed Reservation Pending Hold & Approver Approval Workflow",
+      "status": "PASS",
+      "tests": [
+        { "name": "Create Draft with VIP Seat", "httpStatus": 201, "expectedState": "DRAFT", "result": "PASS" },
+        { "name": "Confirm Mixed Reservation", "httpStatus": 200, "expectedState": "PENDING_APPROVAL", "result": "PASS" },
+        { "name": "Approver 3 Approves Hold", "httpStatus": 200, "expectedState": "CONFIRMED", "result": "PASS" }
+      ]
+    },
+    {
+      "id": "SCENARIO-C",
+      "name": "Approver Rejection Workflow",
+      "status": "PASS",
+      "tests": [
+        { "name": "Confirm VIP Reservation to Pending", "httpStatus": 200, "expectedState": "PENDING_APPROVAL", "result": "PASS" },
+        { "name": "Approver 3 Rejects Hold", "httpStatus": 200, "expectedState": "REJECTED", "result": "PASS" },
+        { "name": "Verify Seats Released for Rebooking", "httpStatus": 200, "result": "PASS" }
+      ]
+    },
+    {
+      "id": "SCENARIO-D",
+      "name": "Owner Cancellation of Live Pending Hold",
+      "status": "PASS",
+      "tests": [
+        { "name": "Confirm VIP Reservation to Pending", "httpStatus": 200, "expectedState": "PENDING_APPROVAL", "result": "PASS" },
+        { "name": "Owner Cancels Pending Hold", "httpStatus": 200, "expectedState": "CANCELLED", "result": "PASS" }
+      ]
+    },
+    {
+      "id": "SCENARIO-E",
+      "name": "Automatic 60-Second Hold Expiration (BR-08 / REQ-11)",
+      "status": "PASS",
+      "tests": [
+        { "name": "Confirm Pending Hold with 60s Timeout", "httpStatus": 200, "expectedState": "PENDING_APPROVAL", "result": "PASS" },
+        { "name": "Wait Timeout Expiration Boundary (60s)", "durationSeconds": 60, "result": "PASS" },
+        { "name": "System Sweep Transitions State", "httpStatus": 200, "expectedState": "EXPIRED", "result": "PASS" },
+        { "name": "Late Approval Attempt Post-Expiration", "httpStatus": 409, "expectedError": "Reservation is terminal", "result": "PASS" }
+      ]
+    },
+    {
+      "id": "SCENARIO-F",
+      "name": "Exclusive Allocation Conflict & Authority Guards (BR-02 / BR-07)",
+      "status": "PASS",
+      "tests": [
+        { "name": "Competing Acquisition on Active Hold", "httpStatus": 409, "expectedError": "Seats already allocated", "result": "PASS" },
+        { "name": "Unauthorized User Attempting Approval", "httpStatus": 403, "expectedError": "User lacks approver authority", "result": "PASS" }
+      ]
+    }
+  ],
+  "summary": {
+    "totalPassed": 43,
+    "totalFailed": 0,
+    "totalSkipped": 0,
+    "executionTimeMs": 64250
+  }
+}
