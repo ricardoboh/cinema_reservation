@@ -1,4 +1,3 @@
-```markdown
 # G3 — State Transition Ownership View
 
 **Team:** Deadlock  
@@ -46,5 +45,3 @@ stateDiagram-v2
 
 * **`CANCELLED`**, **`REJECTED`**, and **`EXPIRED`** are immutable terminal states.
 * No outgoing transitions exist from terminal states. Stale commands or late approval attempts on terminal reservations return `HTTP 409 Conflict`.
-
-```
