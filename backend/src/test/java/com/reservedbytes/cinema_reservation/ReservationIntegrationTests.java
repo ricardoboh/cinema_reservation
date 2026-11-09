@@ -379,7 +379,7 @@ class ReservationIntegrationTests {
 
     @ParameterizedTest
     @ValueSource(longs = {59, 60, 61})
-    void approvalDeadlineBoundaryAndReadOnlyAvailability(long elapsed) throws Exception {
+    void approvalDeadlineBoundaryAndAvailability(long elapsed) throws Exception {
         long id = approvalDraft(true);
         call("/reservations/" + id + "/confirm", user.getId());
         TIME.set(NOW.plusSeconds(elapsed));
@@ -409,6 +409,68 @@ class ReservationIntegrationTests {
     }
 
     @Autowired com.reservedbytes.cinema_reservation.service.ExpirationService expirationService;
+    @Autowired com.reservedbytes.cinema_reservation.service.ReservationService reservationService;
+
+    @ParameterizedTest
+    @ValueSource(longs = {59, 60, 61})
+    void availabilityCommitsExpirationAtDeadlineAndNotifiesOnce(long elapsed) throws Exception {
+        long id = approvalDraft(true);
+        assertThat(call("/reservations/" + id + "/confirm", user.getId()).statusCode()).isEqualTo(200);
+        TIME.set(NOW.plusSeconds(elapsed));
+
+        // A service caller must get the same reconciliation as an HTTP caller.
+        var projection = reservationService.availability(screening.getId());
+        boolean due = elapsed >= 60;
+        assertThat(projection).filteredOn(s -> s.seatNumber() != 2)
+            .extracting(com.reservedbytes.cinema_reservation.dto.SeatAvailability::availability)
+            .containsOnly(due ? "AVAILABLE" : "UNAVAILABLE");
+        var stored = reservations.findById(id).orElseThrow();
+        assertThat(stored.getStatus()).isEqualTo(due ? ReservationStatus.EXPIRED : ReservationStatus.PENDING_APPROVAL);
+        assertThat(stored.getExpiredAt()).isEqualTo(due ? NOW.plusSeconds(60) : null);
+
+        assertAllAvailability(due ? "AVAILABLE" : "UNAVAILABLE");
+        expirationService.expireScreening(screening.getId());
+        if (due) {
+            org.mockito.Mockito.verify(notifications).notifyReservationChanged(
+                org.mockito.ArgumentMatchers.argThat(r -> r.id() == id
+                    && r.status() == ReservationStatus.EXPIRED
+                    && r.expiredAt().equals(NOW.plusSeconds(60))));
+            org.mockito.Mockito.verifyNoMoreInteractions(notifications);
+        } else {
+            org.mockito.Mockito.verifyNoInteractions(notifications);
+        }
+    }
+
+    @Test
+    void availabilityExpiresOnlyDueHoldsInRequestedScreening() throws Exception {
+        long due = approvalDraft(true);
+        assertThat(call("/reservations/" + due + "/confirm", user.getId()).statusCode()).isEqualTo(200);
+        var otherScreening = screenings.save(new Screening("Other movie", "Hall A", NOW.plusSeconds(7200)));
+        var approvalSeat = seats.findByHallOrderByRowNumberAscSeatNumberAsc("Hall A").stream()
+            .filter(s -> s.getSeatNumber() == 3).findFirst().orElseThrow();
+        long other = mapper.readTree(post(request(user.getId(), otherScreening.getId(),
+            List.of(first.getId(), approvalSeat.getId()))).body()).get("id").asLong();
+        assertThat(call("/reservations/" + other + "/confirm", user.getId()).statusCode()).isEqualTo(200);
+        TIME.set(NOW.plusSeconds(30));
+        var liveSeat = seats.save(new Seat("Hall A", 1, 4));
+        long live = mapper.readTree(post(request(user.getId(), screening.getId(), List.of(liveSeat.getId())))
+            .body()).get("id").asLong();
+        assertThat(call("/reservations/" + live + "/confirm", user.getId()).statusCode()).isEqualTo(200);
+
+        TIME.set(NOW.plusSeconds(60));
+        var response = call("/screenings/" + screening.getId() + "/availability", null);
+        assertThat(response.statusCode()).isEqualTo(200);
+        for (var seat : mapper.readTree(response.body())) {
+            assertThat(seat.get("availability").asText())
+                .isEqualTo(seat.get("seatNumber").asInt() == 4 ? "UNAVAILABLE" : "AVAILABLE");
+        }
+        assertStatus(due, ReservationStatus.EXPIRED);
+        assertStatus(live, ReservationStatus.PENDING_APPROVAL);
+        assertStatus(other, ReservationStatus.PENDING_APPROVAL);
+        org.mockito.Mockito.verify(notifications).notifyReservationChanged(
+            org.mockito.ArgumentMatchers.argThat(r -> r.id() == due && r.status() == ReservationStatus.EXPIRED));
+        org.mockito.Mockito.verifyNoMoreInteractions(notifications);
+    }
 
     @Test
     void c05RepeatedWorkerCommitsOneExpirationAndReleasesWholeHold() throws Exception {
