@@ -1,4 +1,3 @@
-```markdown
 # Change Impact Analysis — Baseline v0.1 to v0.2 Evolution
 
 **Team:** Deadlock  
@@ -99,5 +98,3 @@ The change impact analysis identifies key architectural requirements carried for
 The proposed change impacts Confirm, Availability, Cancel, the domain state model, use cases, verification suites, and architectural drivers.
 
 Create remains conceptually unchanged. Specification Baseline v0.1 remains frozen as a historical milestone, while Specification Baseline v0.2 incorporates the full scope of these accepted analysis outcomes.
-
-```
