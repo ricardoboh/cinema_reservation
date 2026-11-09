@@ -12,18 +12,6 @@ import java.util.*;
     private final CinemaHallRepository halls;
     private final ScreeningRepository screenings;
     private final SeatRepository seats;
-    public MovieRepository movies() {
-        return movies;
-    }
-    public CinemaHallRepository halls() {
-        return halls;
-    }
-    public ScreeningRepository screenings() {
-        return screenings;
-    }
-    public SeatRepository seats() {
-        return seats;
-    }
     private final ReservationRepository reservations;
     private final Clock clock;
     public CinemaManagement(MovieRepository m,CinemaHallRepository h,ScreeningRepository s,SeatRepository t,ReservationRepository r,Clock c) {
@@ -40,8 +28,55 @@ import java.util.*;
     public static void input(boolean ok,String msg) {
         if(!ok)throw new ReservationException(HttpStatus.BAD_REQUEST,msg);
     }
-    public <T>T found(Optional<T>x) {
+    private <T>T found(Optional<T>x) {
         return x.orElseThrow(()->new ReservationException(HttpStatus.NOT_FOUND,"Record not found."));
+    }
+    @Transactional(readOnly = true)
+    public List<Movie> listMovies() {
+        return movies.findAll();
+    }
+    @Transactional(readOnly = true)
+    public Movie getMovie(Long id) {
+        return found(movies.findById(id));
+    }
+    public Movie deactivateMovie(Long id) {
+        Movie movie = found(movies.lockById(id));
+        movie.setActive(false);
+        return movie;
+    }
+    @Transactional(readOnly = true)
+    public List<CinemaHall> listHalls() {
+        return halls.findAll();
+    }
+    @Transactional(readOnly = true)
+    public CinemaHall getHall(Long id) {
+        return found(halls.findById(id));
+    }
+    @Transactional(readOnly = true)
+    public List<Seat> listSeats(Long hallId) {
+        getHall(hallId);
+        return seats.findByCinemaHallIdOrderByRowNumberAscSeatNumberAsc(hallId);
+    }
+    @Transactional(readOnly = true)
+    public List<ScreeningView> listScreenings(Long movieId, boolean upcoming) {
+        Instant cutoff = clock.instant().plusSeconds(900);
+        return screenings.findAll().stream()
+            .filter(s -> s.getMovieEntity() != null)
+            .filter(s -> movieId == null || s.getMovieEntity().getId().equals(movieId))
+            .filter(s -> !upcoming || (!s.isCancelled() && s.getMovieEntity().isActive()
+                && s.getCinemaHall().isActive() && s.getStartsAt().isAfter(cutoff)))
+            .sorted(Comparator.comparing(Screening::getStartsAt))
+            .map(this::view).toList();
+    }
+    @Transactional(readOnly = true)
+    public ScreeningView getScreening(Long id) {
+        return view(found(screenings.findById(id)));
+    }
+    public ScreeningView saveScreeningView(Long id, ScreeningInput input) {
+        return view(saveScreening(id, input));
+    }
+    public ScreeningView cancelScreeningView(Long id) {
+        return view(cancelScreening(id));
     }
     public record MovieInput(String title,String description,String genre,int durationMinutes,int releaseYear,String posterUrl,boolean active) {
     }
@@ -123,7 +158,7 @@ import java.util.*;
     }
     public record ScreeningView(Long id,Movie movie,CinemaHall hall,Instant startsAt,Instant endsAt,boolean cancelled) {
     }
-    public ScreeningView view(Screening s) {
+    private ScreeningView view(Screening s) {
         return new ScreeningView(s.getId(),s.getMovieEntity(),s.getCinemaHall(),s.getStartsAt(),s.getEndsAt(),s.isCancelled());
     }
 }

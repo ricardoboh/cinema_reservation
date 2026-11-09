@@ -1,4 +1,6 @@
 # Opt in with --spring.profiles.active=dev. This disposable database resets on restart.
+demo:
+  expiration-sweep-ms: 1000
 spring:
   datasource:
     url: jdbc:h2:mem:cinema-dev;DB_CLOSE_DELAY=-1

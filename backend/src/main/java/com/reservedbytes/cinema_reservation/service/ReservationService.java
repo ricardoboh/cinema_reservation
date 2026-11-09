@@ -71,11 +71,14 @@ var selectedSeats = seats.findAllById(request.seatIds());
         return new CreateReservationResponse(reservation.getId());
     }
 
-    @Transactional(readOnly = true)
+    // OP-02 reconciles due holds and projects availability under one screening lock.
+    @Transactional
     public java.util.List<SeatAvailability> availability(Long screeningId) {
         var screening = screenings.findLockedById(screeningId).orElseThrow(() ->
             new ReservationException(HttpStatus.NOT_FOUND, "Screening not found."));
-        var allocated = reservations.findActiveSeatIds(screeningId, clock.instant());
+        var now = clock.instant();
+        expiration.expireDueLocked(screeningId, now);
+        var allocated = reservations.findActiveSeatIds(screeningId, now);
         return (screening.getCinemaHall()==null ? seats.findByHallOrderByRowNumberAscSeatNumberAsc(screening.getHall()) : seats.findByCinemaHallIdOrderByRowNumberAscSeatNumberAsc(screening.getCinemaHall().getId())).stream()
             .map(s -> new SeatAvailability(s.getId(), s.getRowNumber(), s.getSeatNumber(),
                 !s.isActive() || screening.isCancelled() ? "DISABLED" : allocated.contains(s.getId()) ? "UNAVAILABLE" : "AVAILABLE", policy.requiresApproval(s), s.getSeatType().name())).toList();

@@ -1,0 +1,9 @@
+* { box-sizing: border-box; }
+:root { font-family: system-ui, sans-serif; color: #18232b; background: #f4f6f7; }
+body { margin: 0; }
+a { color: #135b81; }
+button, input, select { font: inherit; }
+button { cursor: pointer; padding: .55rem .8rem; border: 1px solid #637986; background: #fff; border-radius: .25rem; }
+button:disabled { opacity: .5; cursor: default; }
+input, select { padding: .5rem; border: 1px solid #637986; border-radius: .25rem; max-width: 100%; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #ba6900; outline-offset: 3px; }

@@ -10,7 +10,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Separate system transaction before observations; OP-02 itself stays read-only. */
+/** Central expiration transitions, shared by observations, commands and the sweep. */
 @Service
 public class ExpirationService {
     private final ReservationRepository reservations;
@@ -35,9 +35,13 @@ public class ExpirationService {
 
     // Called only while the shared screening lock is held in the caller's transaction.
     public void expireDueLocked(Long screeningId) {
-        var now = clock.instant();
+        expireDueLocked(screeningId, clock.instant());
+    }
+
+    // Availability uses the same observation time for reconciliation and projection.
+    public void expireDueLocked(Long screeningId, Instant observedAt) {
         for (var reservation : reservations.findByScreeningIdAndStatus(screeningId, ReservationStatus.PENDING_APPROVAL)) {
-            expireIfDueLocked(reservation, now);
+            expireIfDueLocked(reservation, observedAt);
         }
     }
 

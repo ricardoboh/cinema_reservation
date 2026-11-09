@@ -14,13 +14,22 @@ class CinemaManagementApiTests {
  var movie=request("POST","/movies","{\"title\":\"API movie\",\"genre\":\"Drama\",\"durationMinutes\":90,\"releaseYear\":2026,\"active\":true}");assertThat(movie.statusCode()).isEqualTo(201);long mid=mapper.readTree(movie.body()).get("id").asLong();
  var hall=request("POST","/halls","{\"name\":\"API hall\",\"active\":true}");assertThat(hall.statusCode()).isEqualTo(201);long hid=mapper.readTree(hall.body()).get("id").asLong();
  assertThat(request("GET","/movies",null).statusCode()).isEqualTo(200);assertThat(request("GET","/halls",null).statusCode()).isEqualTo(200);
+ assertThat(mapper.readTree(request("GET","/movies/"+mid,null).body()).get("title").asString()).isEqualTo("API movie");
+ assertThat(mapper.readTree(request("GET","/halls/"+hid,null).body()).get("name").asString()).isEqualTo("API hall");
  assertThat(request("PUT","/halls/"+hid+"/layout","{\"rows\":2,\"seatsPerRow\":3}").statusCode()).isEqualTo(200);
+ assertThat(mapper.readTree(request("GET","/halls/"+hid+"/seats",null).body()).size()).isEqualTo(6);
  String payload="{\"movieId\":"+mid+",\"hallId\":"+hid+",\"startsAt\":\""+Instant.now().plusSeconds(86400)+"\"}";
  var show=request("POST","/screenings",payload);assertThat(show.statusCode()).isEqualTo(201);long sid=mapper.readTree(show.body()).get("id").asLong();assertThat(mapper.readTree(show.body()).get("movie").get("title").asString()).isEqualTo("API movie");
+ assertThat(mapper.readTree(request("GET","/screenings/"+sid,null).body()).get("id").asLong()).isEqualTo(sid);
  assertThat(request("POST","/screenings",payload).statusCode()).isEqualTo(409);
  assertThat(request("GET","/screenings?upcoming=true&movieId="+mid,null).statusCode()).isEqualTo(200);
  var seats=request("GET","/screenings/"+sid+"/availability",null);assertThat(seats.statusCode()).isEqualTo(200);assertThat(mapper.readTree(seats.body()).size()).isEqualTo(6);
  assertThat(request("DELETE","/movies/"+mid,null).statusCode()).isEqualTo(409);
  assertThat(request("POST","/screenings/"+sid+"/cancel",null).statusCode()).isEqualTo(200);
+ assertThat(request("POST","/movies/"+mid+"/deactivate",null).statusCode()).isEqualTo(200);
+ assertThat(mapper.readTree(request("GET","/movies/"+mid,null).body()).get("active").asBoolean()).isFalse();
+ assertThat(request("GET","/movies/999999",null).statusCode()).isEqualTo(404);
+ assertThat(request("GET","/halls/999999/seats",null).statusCode()).isEqualTo(404);
+ assertThat(request("GET","/screenings/999999",null).statusCode()).isEqualTo(404);
  }
 }
