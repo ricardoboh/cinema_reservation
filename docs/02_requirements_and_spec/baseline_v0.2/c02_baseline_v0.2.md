@@ -1,4 +1,3 @@
-```markdown
 # Specification Baseline v0.2 — Cinema Reservation System
 
 **Team:** Deadlock  
@@ -190,5 +189,3 @@ stateDiagram-v2
 5. Pending reservations can be cancelled by the owner prior to screening start.
 6. Rejection, expiration, and cancellation release all held resources while retaining historical records.
 7. `REJECTED`, `EXPIRED`, and `CANCELLED` are terminal states.
-
-```
