@@ -1,3 +1,4 @@
+```
 cinema_reservation/
 ├── README.md                           # Hlavní rozcestník, quick start, build & run návod
 ├── MANUAL-TESTING.md                   # Návod pro ruční verifikaci a přímé REST příkazy
@@ -77,6 +78,8 @@ cinema_reservation/
 │       └── test/                       # Rozsáhlá testovací sada (74 testů)
 │
 └── frontend/                           # Klientská část (React / Vite / TypeScript)
+
+```
     ├── package.json
     ├── vite.config.ts
     ├── verify-ui.mjs                   # CDP skript pro Headless Edge UI verifikaci
