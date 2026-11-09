@@ -1,4 +1,3 @@
-```markdown
 # G2 — Static Architecture View
 
 **Team:** Deadlock  
@@ -56,5 +55,3 @@ flowchart TB
 * Confirmation inserts seat rows atomically. A constraint violation triggers a relational rollback, translated by Reservation Management into `HTTP 409 Conflict`.
 * Approval converts pending holds to confirmed allocations without deleting seat rows (zero release window).
 * Cancellation, rejection, and expiration delete `active_allocation` rows for the target reservation ID, immediately freeing resources.
-
-```
