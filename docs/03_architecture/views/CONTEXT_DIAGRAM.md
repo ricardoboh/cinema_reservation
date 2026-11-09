@@ -17,6 +17,7 @@ The **Cinema Reservation System** acts as an isolated bounded context managing p
 ---
 
 ## 2. Context Diagram (Mermaid)
+```
 
 ```mermaid
 flowchart TB
@@ -37,9 +38,8 @@ flowchart TB
     
     System -->|"Asynchronous Outbox Dispatch<br/>(Committed CONFIRMED, CANCELLED, REJECTED, EXPIRED events)"| Notifications
     Notifications -->|"HTTP Acknowledgement / Retry Failure"| System
-
 ```
-
+```markdown
 ---
 
 ## 3. Actor Privileges & System Responsibilities
