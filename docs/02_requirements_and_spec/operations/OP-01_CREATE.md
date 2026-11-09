@@ -28,7 +28,6 @@ Creating a draft captures the customer's intent without immediately locking or a
     "seatIds": [10, 11]
   }
 
-```
 
 ---
 
