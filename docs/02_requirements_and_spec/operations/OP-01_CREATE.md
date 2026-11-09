@@ -1,4 +1,3 @@
-```markdown
 # OP-01 — Create Reservation Specification
 
 **Domain Operation:** Create Reservation Proposal (`DRAFT`)  
@@ -70,5 +69,3 @@ Creating a draft captures the customer's intent without immediately locking or a
 * **Scenario V-01.2 (Exact Boundary):** Screening starts in exactly 15 minutes $\rightarrow$ `201 Created`, state `DRAFT`.
 * **Scenario V-01.3 (Late Creation):** Screening starts in 14 minutes and 59 seconds $\rightarrow$ `409 Conflict`, draft creation rejected.
 * **Scenario V-01.4 (Overlapping Drafts):** User 1 creates draft for Seat A1. User 2 creates draft for Seat A1 $\rightarrow$ Both requests return `201 Created` (`DRAFT` does not block).
-
-```
