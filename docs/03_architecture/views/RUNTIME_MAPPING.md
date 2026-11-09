@@ -1,4 +1,3 @@
-```markdown
 # G4 — Runtime & Deployment Mapping View
 
 **Team:** Deadlock  
@@ -55,5 +54,3 @@ flowchart TB
 * **Backend HTTP Port:** Running on `8081` (`dev` profile) or `8080` (`default` profile).
 * **Frontend Vite Dev Server:** Port `5173` (proxies `/api` requests to backend port).
 * **Database Target:** Embedded H2 database engine running in-process inside the Spring Boot JVM.
-
-```
