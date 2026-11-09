@@ -1,4 +1,3 @@
-```markdown
 # C03 Part A — AS-IS System Mapping & Code Analysis
 
 **Team:** Deadlock  
@@ -116,5 +115,3 @@ flowchart TD
 | **Key Architectural Question** | *Where and how must the authoritative allocation decision be enforced so that invariant BR-02 is strictly preserved under concurrent HTTP requests, eliminating application-level race conditions?* |
 | **Observed AS-IS Vulnerability** | In the current implementation, `countOtherAllocations()` (Read) and `reservation.setStatus()` (Write) are separate logic steps within application memory. Although guarded by a coarse `PESSIMISTIC_WRITE` screening lock, this creates a potential Time-of-Check to Time-of-Use (TOCTOU) bottleneck and relies entirely on application-level locking rather than database exclusivity guarantees. |
 | **Why It Matters** | Under heavy parallel requests, application locks can degrade throughput or be accidentally bypassed by new API endpoints. Moving resource exclusivity to a relational database constraint (`UNIQUE(screening_id, seat_id)`) guarantees BR-02 at the persistence boundary (ADR-01). |
-
-```
