@@ -1,4 +1,3 @@
-```markdown
 # G1 — System Context View
 
 **Team:** Deadlock  
@@ -17,7 +16,6 @@ The **Cinema Reservation System** acts as an isolated bounded context managing p
 ---
 
 ## 2. Context Diagram (Mermaid)
-```
 
 ```mermaid
 flowchart TB
@@ -39,7 +37,7 @@ flowchart TB
     System -->|"Asynchronous Outbox Dispatch<br/>(Committed CONFIRMED, CANCELLED, REJECTED, EXPIRED events)"| Notifications
     Notifications -->|"HTTP Acknowledgement / Retry Failure"| System
 ```
-```markdown
+
 ---
 
 ## 3. Actor Privileges & System Responsibilities
@@ -49,5 +47,3 @@ flowchart TB
 | **Registered User** | Creates `DRAFT` proposals, executes `Confirm` requests, queries availability, and cancels owned reservations. | Ownership verification (`X-User-Id`). Cannot approve pending holds. |
 | **Authorized Approver** | Inspects reservations in `PENDING_APPROVAL` and submits `APPROVE` or `REJECT` decisions (OP-05). | Requires explicit Approver role over target seat classifications (BR-07). |
 | **Notification Service** | Receives committed outbox payload events via asynchronous HTTP POST. | External boundary. Provider failure does not roll back database transactions (ADR-02). |
-
-```
