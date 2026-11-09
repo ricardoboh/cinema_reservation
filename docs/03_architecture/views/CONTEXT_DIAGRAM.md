@@ -20,22 +20,22 @@ The **Cinema Reservation System** acts as an isolated bounded context managing p
 
 ```mermaid
 flowchart TB
-    Customer["Registered User / Reservation Owner\n(Primary Actor)"]
-    Approver["Authorized Approver\n(Cinema Manager / Staff)"]
+    Customer["Registered User / Reservation Owner<br/>(Primary Actor)"]
+    Approver["Authorized Approver<br/>(Cinema Manager / Staff)"]
     
     subgraph SystemBoundary ["Cinema Reservation System (Bounded Context)"]
         System["Reservation Application Backend & Storage"]
     end
     
-    Notifications["Notification Service\n(External Third-Party Gateway)"]
+    Notifications["Notification Service<br/>(External Third-Party Gateway)"]
 
-    Customer -->|"Create, Confirm, Cancel reservations;\nQuery seat availability & status"| System
-    System -->|"Return reservation states, deadlines,\navailability maps & error responses"| Customer
+    Customer -->|"Create, Confirm, Cancel reservations;<br/>Query seat availability & status"| System
+    System -->|"Return reservation states, deadlines,<br/>availability maps & error responses"| Customer
     
-    Approver -->|"Review live pending holds;\nApprove or Reject requests"| System
-    System -->|"Return decision outcomes\nor 403/409 errors"| Approver
+    Approver -->|"Review live pending holds;<br/>Approve or Reject requests"| System
+    System -->|"Return decision outcomes<br/>or 403/409 errors"| Approver
     
-    System -->|"Asynchronous Outbox Dispatch\n(Committed CONFIRMED, CANCELLED, REJECTED, EXPIRED events)"| Notifications
+    System -->|"Asynchronous Outbox Dispatch<br/>(Committed CONFIRMED, CANCELLED, REJECTED, EXPIRED events)"| Notifications
     Notifications -->|"HTTP Acknowledgement / Retry Failure"| System
 
 ```
