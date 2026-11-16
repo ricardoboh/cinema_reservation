@@ -55,7 +55,7 @@ cinema_reservation/
 │   │   └── RUNTIME_VERIFICATION.json   # Logy a zápisy ze skutečného spuštění verifikačních skriptů
 │   │
 │   └── 06_reviews_and_status/          # C06 & C08: Peer review a řízení projektu
-│       ├── PEER_REVIEW_C06.md          # Hodnocení od týmu Absolute Cinema a reakce (F1–F3)
+│       ├── PEER_REVIEW_C06.md          # Historická interní revize; externí původ nedoložen
 │       └── STATUS_REPORT_C08.md        # C08 Executive Status Report (Slide 01–06 podklady)
 │
 ├── backend/                            # Aplikační backend (Java 21 / Spring Boot)
@@ -87,3 +87,12 @@ cinema_reservation/
         ├── App.tsx                     # Hlavní UI komponenta (Rezervační mapa, Approver ovládání)
         ├── App.css
         └── reservations.ts             # API klient pro komunikaci s backendem
+
+## C05–C07 — aktuálne podklady a oprava navigácie
+
+- C05: [detailný návrh](04_detailed_design/c05_detailed_design.md), [kontrakty](04_detailed_design/DESIGN_CONTRACTS.md), [expiračná politika](04_detailed_design/EXPIRATION_POLICY.md), [sekvencie](04_detailed_design/EXPIRATION_SEQUENCE.md).
+- C05 evidencia: [odvodené testy](05_verification_and_quality/DD_DERIVED_TESTS.md) a [historický návrh/checker](05_verification_and_quality/ARCHITECTURE_CHECKER.md), s upozorneniami na historické výsledky a opravy.
+- C06: [odchádzajúci review Křečkomatu](review/C06_review) a [historický testový log](review/C06_tests.txt). Identita hodnotiteľov, owner dispositions a odovzdanie čakajú na potvrdenie.
+- [PEER_REVIEW_C06.md](06_reviews_and_status/PEER_REVIEW_C06.md) je historická kópia interného auditu Cinema Reservation. Neoveruje review od Absolute Cinema ani iného nezávislého tímu.
+- C07: [proveniencia, odpovede, stav a checklist externých dôkazov](06_reviews_and_status/C07_REVIEW_RESPONSE_AND_STATUS.md).
+- [Správa o dokončení C05–C07](../SWI_C05_C07_COMPLETION_REPORT.md) uvádza rozsah, overenia a otvorené podklady. C08 zostáva historickým dokumentom mimo tejto opravy; jeho externú atribúciu nepotvrdzujú dostupné dôkazy.

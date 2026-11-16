@@ -12,6 +12,8 @@
 
 ---
 
+> C05 evidence clarification (2026-11-16): the transcript below is historical, not a fresh execution. Current test classes use package `com.reservedbytes.cinema_reservation` (not `.service`). The rollback integration test calls `setRollbackOnly()` rather than throwing an unhandled exception. `backend/check_architecture.py` is absent from this baseline, so its recorded result is not reproducible here. Current source-based contracts and traceability are in [the restored detailed design](../04_detailed_design/c05_detailed_design.md).
+
 ## 1. Overview & Verification Strategy
 
 The verification suite for the **Manage Pending Expiration** unit is strictly derived from the C05 Detailed Design specification. It follows a two-tier testing strategy designed to balance isolated unit isolation with transactional integration guarantees:
