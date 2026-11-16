@@ -1,5 +1,23 @@
 # C06 — Assessment Form (CZ)
 
+## Stav a pôvod uloženého review — doplnenie 2026-11-16
+
+Toto je odchádzajúce hodnotenie projektu **Křečkomat**, nie externé hodnotenie Cinema Reservation. Pôvodné F1/F2 a technické dôkazy nižšie sú zachované. Hodnotenie sa vzťahuje výhradne na commit `8050a3990c01b792a94bd01f361fce1409868391` projektu `tomaskirnig/SWI_2027`.
+
+Historický [testový log](C06_tests.txt) obsahuje presne 30 riadkov `[PASS]`, nula `[FAIL]` a súhrn 30/0. Dátum 19. 10. 2026, prostredie a priradenie ku commitu pochádzajú z pôvodného textu review; samotný log nemá vlastnú commit/dátumovú hlavičku. Pri tomto doplnení sa Křečkomat ani jeho testy nespúšťali. Log nedokazuje splnenie návrhových deliverables.
+
+**Záver:** technické hodnotenie je čitateľné a obsahuje dva konkrétne nálezy chýbajúcej evidence, reprodukčný postup, očakávanie a pozorovaný stav. F1/F2 ostávajú historickými reviewer findings; nie sú rozhodnutím vlastníkov Křečkomatu. Finálne potvrdenie C06 je otvorené.
+
+- **ACTION REQUIRED — Deadlock:** potvrdiť názov hodnotiaceho tímu a konkrétnych hodnotiteľov. Kontext zadania uvádza Deadlock, ale Git autor nie je dôkaz osobného vykonania review.
+- **ACTION REQUIRED — oba tímy:** potvrdiť, že uvedený commit bol dohodnutou odovzdanou baseline.
+- **ACTION REQUIRED — vlastníci Křečkomatu:** doplniť F1/F2 disposition (ACCEPTED, REJECTED s dôvodom alebo DEFERRED), dôkaz a akciu/no-change. Aktuálne PENDING.
+- **ACTION REQUIRED — Deadlock:** doložiť skutočné odovzdanie a príjem review; existencia tohto súboru nepotvrdzuje odoslanie.
+- **ACTION REQUIRED — podklady:** priložiť pôvodné zadania, `C06_baseline_files.txt` a `C06_build.txt`, na ktoré sa historický text odvoláva; v tomto repozitári chýbajú. Tiež potvrdiť dostupnosť uvádzanej kópie `docs/c06-assessment.md` u hodnoteného projektu. Tieto externé cesty nie sú lokálnymi prílohami.
+
+Reprodukcia F1/F2: v samostatnom checkout-e uvedeného commitu Křečkomatu vypísať `git ls-tree -r --name-only HEAD`, prečítať `docs/architecture-and-decisions.md`, `docs/evidence-and-evolution.md`, `DIAGRAMS.md`, `ROADMAP.md` a `package.json`; porovnať ich s pôvodnými zadaniami citovanými nižšie. F1 overuje absenciu nadväzujúcej návrhovej/conformance evidence, F2 absenciu identifikovaného DD a jeho testovej väzby. Spustenie 30 funkčných scenárov samo osebe tieto absencie nevyvracia. Nová nezávislá reprodukcia zdrojov sa v tomto doplnení nevykonala.
+
+Nasleduje zachovaný pôvodný assessment. Jeho odkazy na „dodané zadania“, „nové overenie“ a lokálnu kópiu opisujú vtedajšie prostredie autora, nie dnešné nové overenie.
+
 ## Projekt
 
 - Hodnotící tým: **DOPLNIT skutečný název / členy hodnotícího týmu**.

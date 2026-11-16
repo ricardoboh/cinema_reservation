@@ -1,4 +1,10 @@
-# Cinema Reservation System — priebežná projektová revízia SWI
+# Interná revízia Cinema Reservation — historická kópia, nie externý peer review
+
+> Oprava proveniencie, 2026-11-16: pri východiskovom commite `efef609615aed90aae3851d9a7e205345e862cb2` bol obsah tohto súboru totožný s koreňovým [PROJECT_MIDTERM_REVIEW.md](../../PROJECT_MIDTERM_REVIEW.md). Git história vedie k internému záznamu `2d5ccf9` a presunu dokumentácie `f6e6799`. Neobsahuje doloženú identitu nezávislého hodnotiteľa ani originál jeho posudku. Pôvodný historický obsah zostáva nižšie; jeho dobové tvrdenia nie sú aktuálny stav. Externý tím „Absolute Cinema“ spomínaný v indexe nebol týmto dokumentom preukázaný. Opravy klasifikácie a súčasné odpovede sú v [C07 review response a status](C07_REVIEW_RESPONSE_AND_STATUS.md). Odkazy v historickej kópii boli opravené podľa dnešného umiestnenia súborov.
+
+## Zachovaný interný report z 19. 10. 2026
+
+Poznámka k navigácii: názvy odkazov nižšie zachovávajú dobové názvy. Ciele smerujú na dnešné premenované alebo tematicky nadväzujúce dokumenty; ich aktuálny obsah nemusí byť totožný s historickou revíziou. Pôvodné verzie ostávajú v Git histórii. Dobový `architecture-and-decisions.md` je tu navigovaný na zachovaný C05 návrh, `evidence-and-evolution.md` na C05 testovú evidenciu.
 
 **Dátum revízie:** 19. 10. 2026  
 **Tím:** Deadlock  
@@ -14,7 +20,7 @@ Pred revíziou bol pracovný strom podľa `git status --short` čistý. Pri rev�
 
 Systém rieši rezervovanie jedného alebo viacerých sedadiel na konkrétne filmové predstavenie. Má zákazníkovi ukázať dostupnosť a zabrániť tomu, aby rovnaké sedadlo na rovnakej projekcii získali dve aktívne rezervácie. Rozlišuje rozpracovaný zámer zákazníka od skutočne pridelených miest. Vybrané miesta navyše vyžadujú samostatné schválenie, ktoré môže prísť neskôr, byť zamietnuté alebo vypršať.
 
-V aktuálnom deme vystupujú zákazník/vlastník rezervácie a samostatný `Approver`. Zákazník vytvára, potvrdzuje, číta a ruší svoju rezerváciu; Approver rozhoduje o čakajúcej rezervácii. Dokument [intent-and-change.md](docs/intent-and-change.md) uvádza aj `Cinema Administrator` a `Cinema Operator`, ale administrátorské rozhranie ani správa kín implementované nie sú. „Registered User“ je dnes predpoklad existujúceho databázového ID, nie používateľský účet s registráciou a prihlásením.
+V aktuálnom deme vystupujú zákazník/vlastník rezervácie a samostatný `Approver`. Zákazník vytvára, potvrdzuje, číta a ruší svoju rezerváciu; Approver rozhoduje o čakajúcej rezervácii. Dokument [intent-and-change.md](../01_domain_and_frame/PROJECT_FRAME.md) uvádza aj `Cinema Administrator` a `Cinema Operator`, ale administrátorské rozhranie ani správa kín implementované nie sú. „Registered User“ je dnes predpoklad existujúceho databázového ID, nie používateľský účet s registráciou a prihlásením.
 
 ### 1.2 Základné pojmy
 
@@ -41,7 +47,7 @@ Ten istý fyzický `Seat` môže byť rezervovaný pre odlišné projekcie. Viac
 8. Vlastník môže pred začiatkom zrušiť `DRAFT`, živý `PENDING_APPROVAL` alebo `CONFIRMED`. Zrušenie záznam nemaže.
 9. `CANCELLED`, `REJECTED` a `EXPIRED` sú konečné stavy. Nový pokus znamená novú rezerváciu.
 
-Pravidlá majú konkrétnu realizáciu v `ReservationService`, `ApprovalPolicy`, `FinitePendingExpirationPolicy`, `ExpirationService` a repository dotazoch. Úplná aktuálna špecifikácia je [baseline v0.2](docs/c02_baseline_specification_v0.2.md).
+Pravidlá majú konkrétnu realizáciu v `ReservationService`, `ApprovalPolicy`, `FinitePendingExpirationPolicy`, `ExpirationService` a repository dotazoch. Úplná aktuálna špecifikácia je [baseline v0.2](../02_requirements_and_spec/baseline_v0.2/c02_baseline_v0.2.md).
 
 ## 2. Repozitár a technická štruktúra
 
@@ -49,13 +55,13 @@ Pravidlá majú konkrétnu realizáciu v `ReservationService`, `ApprovalPolicy`,
 
 | Cesta | Zodpovednosť a zistenia |
 |---|---|
-| [README.md](README.md) | Build/run pokyny, tím, pôvodný C01 rámec a walking skeleton; pôvodný trojstavový opis je už historický. |
-| [backend/](backend/) | Java/Spring Boot aplikácia, Maven Wrapper, testy, fixtures, manuálny a API verifikačný scenár. |
+| [README.md](../../README.md) | Build/run pokyny, tím, pôvodný C01 rámec a walking skeleton; pôvodný trojstavový opis je už historický. |
+| [backend/](../../backend) | Java/Spring Boot aplikácia, Maven Wrapper, testy, fixtures, manuálny a API verifikačný scenár. |
 | `backend/src/main/java/com/reservedbytes/cinema_reservation/` | Dva REST controllery, DTO, doménové entity, služby, Spring Data repositories a chyby. |
 | `backend/src/main/resources/` | Základný profil, `dev` profil a SQL fixtures. |
 | `backend/src/test/` | Unit testy, integračné HTTP/DB testy a testovacia H2 konfigurácia. |
-| [frontend/](frontend/) | React/TypeScript SPA, Vite, CSS, API adaptér a CDP browser skript. |
-| [docs/](docs/) | Baseline v0.1/v0.2, analýza zmeny, architektúra, ADR-01, C03 a C05 návrh a historická evidencia. |
+| [frontend/](../../frontend) | React/TypeScript SPA, Vite, CSS, API adaptér a CDP browser skript. |
+| [docs/](..) | Baseline v0.1/v0.2, analýza zmeny, architektúra, ADR-01, C03 a C05 návrh a historická evidencia. |
 | `.idea/` | IntelliJ projektové metadáta; napr. IDE používa JDK 23, ale POM cieli na Java 21. |
 | `backend/target/` | Existujúce ignorované build výstupy, starší JAR, reporty, logy a screenshoty; nie sú autoritatívnym obrazom aktuálneho zdroja. |
 | `frontend/node_modules/`, prípadné build výstupy | Lokálne závislosti a odvodené súbory, nie autorský zdroj projektu. |
@@ -64,11 +70,11 @@ Prešli sa sledované súbory aj relevantné lokálne artefakty. Nevykonával sa
 
 ### 2.2 Jazyky, frameworky a vstupné body
 
-Backend používa Java s cieľom **21**, Spring Boot **4.1.1**, Spring MVC, Spring Data JPA/Hibernate a embedded **H2**. Verzie deklaruje [pom.xml](backend/pom.xml). Spring Data JDBC starter je tiež závislosťou, ale JDBC repositories sú konfiguráciou vypnuté; produkčná repository vrstva používa `JpaRepository`. `JdbcTemplate` sa používa v testovacích fixtures, nie ako hlavná aplikačná persistence vrstva. Lombok generuje getters. OpenAPI/Swagger UI poskytuje `springdoc-openapi-starter-webmvc-ui` **3.1.0**.
+Backend používa Java s cieľom **21**, Spring Boot **4.1.1**, Spring MVC, Spring Data JPA/Hibernate a embedded **H2**. Verzie deklaruje [pom.xml](../../backend/pom.xml). Spring Data JDBC starter je tiež závislosťou, ale JDBC repositories sú konfiguráciou vypnuté; produkčná repository vrstva používa `JpaRepository`. `JdbcTemplate` sa používa v testovacích fixtures, nie ako hlavná aplikačná persistence vrstva. Lombok generuje getters. OpenAPI/Swagger UI poskytuje `springdoc-openapi-starter-webmvc-ui` **3.1.0**.
 
-Vstupom je [CinemaReservationApplication.java](backend/src/main/java/com/reservedbytes/cinema_reservation/CinemaReservationApplication.java), metóda `main()`. Zapína scheduling a poskytuje bean `Clock.systemUTC()`. Maven Wrapper má wrapper verziu `3.3.4` a distribúciu Maven `3.9.16` podľa `backend/.mvn/wrapper/maven-wrapper.properties`.
+Vstupom je [CinemaReservationApplication.java](../../backend/src/main/java/com/reservedbytes/cinema_reservation/CinemaReservationApplication.java), metóda `main()`. Zapína scheduling a poskytuje bean `Clock.systemUTC()`. Maven Wrapper má wrapper verziu `3.3.4` a distribúciu Maven `3.9.16` podľa `backend/.mvn/wrapper/maven-wrapper.properties`.
 
-Frontend používa React a React DOM **19.2.8** v deklarovanom rozsahu, TypeScript **~6.0.2**, Vite **^8.3.0**, React Vite plugin **^6.1.1** a Oxlint **^1.81.0**. Zdrojom deklarácií je [package.json](frontend/package.json); lockfile zachytáva konkrétny dependency strom. Vstup `frontend/index.html` načíta [main.tsx](frontend/src/main.tsx), ktorý renderuje `App` v `StrictMode`. Hlavná obrazovka je [App.tsx](frontend/src/App.tsx), HTTP adaptér [reservations.ts](frontend/src/reservations.ts).
+Frontend používa React a React DOM **19.2.8** v deklarovanom rozsahu, TypeScript **~6.0.2**, Vite **^8.3.0**, React Vite plugin **^6.1.1** a Oxlint **^1.81.0**. Zdrojom deklarácií je [package.json](../../frontend/package.json); lockfile zachytáva konkrétny dependency strom. Vstup `frontend/index.html` načíta [main.tsx](../../frontend/src/main.tsx), ktorý renderuje `App` v `StrictMode`. Hlavná obrazovka je [App.tsx](../../frontend/src/App.tsx), HTTP adaptér [reservations.ts](../../frontend/src/reservations.ts).
 
 `tsconfig*.json` oddeľujú browser aplikáciu a Node/Vite konfiguráciu, používajú `noEmit` a prísne kontroly nepoužitých deklarácií. `.oxlintrc.json` zapína React/TypeScript/Oxc kontroly vrátane hooks. `App.css` a `index.css` definujú responzívnu mapu miest, stavové farby a layout. V `assets/` zostali aj šablónové obrázky React/Vite a `hero.png`; aktuálny `App` ich neimportuje. SVG/public obrázky nie sú architektonické diagramy.
 
@@ -76,12 +82,12 @@ Frontend používa React a React DOM **19.2.8** v deklarovanom rozsahu, TypeScri
 
 | Konfigurácia | Skutočné správanie |
 |---|---|
-| [application.yaml](backend/src/main/resources/application.yaml) | File-backed H2 v relatívnej ceste `./data/cinema-reservation`, Hibernate `ddl-auto: update`, `open-in-view: false`, JDBC repositories vypnuté. |
-| [application-dev.yaml](backend/src/main/resources/application-dev.yaml) | Pamäťová H2 `cinema-dev`, `create-drop`, SQL inicializácia z `dev-data.sql`; záznamy sa pri reštarte stratia. |
-| [test application.yaml](backend/src/test/resources/application.yaml) | Pamäťová H2 `cinema-test`, `create-drop`; testy pracujú s izolovanými dátami. |
+| [application.yaml](../../backend/src/main/resources/application.yaml) | File-backed H2 v relatívnej ceste `./data/cinema-reservation`, Hibernate `ddl-auto: update`, `open-in-view: false`, JDBC repositories vypnuté. |
+| [application-dev.yaml](../../backend/src/main/resources/application-dev.yaml) | Pamäťová H2 `cinema-dev`, `create-drop`, SQL inicializácia z `dev-data.sql`; záznamy sa pri reštarte stratia. |
+| [test application.yaml](../../backend/src/test/resources/application.yaml) | Pamäťová H2 `cinema-test`, `create-drop`; testy pracujú s izolovanými dátami. |
 | `demo.approval-timeout` | Injektované v `FinitePendingExpirationPolicy`, default `PT60S`; musí byť kladné. |
 | `demo.expiration-sweep-ms` | Základný aplikačný YAML nastavuje `3600000`, teda hodinu. `@Scheduled` má fallback `1000`, ktorý sa pri načítanom YAML nepoužije. |
-| [vite.config.ts](frontend/vite.config.ts) | Vite bind `127.0.0.1:5173`, `strictPort: true`, proxy `/reservations` aj `/screenings` na `http://localhost:8080`. |
+| [vite.config.ts](../../frontend/vite.config.ts) | Vite bind `127.0.0.1:5173`, `strictPort: true`, proxy `/reservations` aj `/screenings` na `http://localhost:8080`. |
 
 Pretože cesty H2 sú relatívne k working directory, spustenie z iného adresára môže vytvoriť inú lokálnu databázu. Default profil neobsahuje fixtures a neposkytuje API na vytvorenie používateľov/projekcií/miest; prázdna DB preto nestačí na UI demo. `dev` profil tento problém rieši inicializáciou známych dát.
 
@@ -91,16 +97,16 @@ Nie je zavedený Flyway/Liquibase ani verzovaný migračný postup. `ddl-auto: u
 
 | Dokument | Úloha a hodnota pri revízii |
 |---|---|
-| [intent-and-change.md](docs/intent-and-change.md) | Pôvodný účel, stakeholderi a pravidlá; časť o TTL draftu je otvorená otázka. |
-| [c02_baseline_specification.md](docs/c02_baseline_specification.md) | Zachovaný v0.1 model: štyri operácie, tri stavy, pravidlá a verifikácia. |
-| [c02-change-impact-analysis.md](docs/c02-change-impact-analysis.md) | Analýza dopadu zavedenia oneskoreného schvaľovania. |
-| [c02_baseline_specification_v0.2.md](docs/c02_baseline_specification_v0.2.md) | Aktuálny kontrakt REQ-01–12, BR-01–09, OP-01–05 a V-01–17. |
-| [c02-task14-report.md](docs/c02-task14-report.md) | Historický implementačný a runtime/browser report z 4. 10.; nie nový výsledok tejto revízie. |
-| [c03_part_a.md](docs/c03_part_a.md) | AS-IS mapovanie so závažnými vecnými nepresnosťami; nemožno ho bez opráv prezentovať ako opis kódu. |
-| [c03.md](docs/c03.md) | Architektonické drivery, porovnanie alternatív, ADR-01, Mermaid G1–G4, H/I a backlog J–L. Rozlišuje TO-BE a AS-IS. |
-| [architecture-and-decisions.md](docs/architecture-and-decisions.md) | Aktuálne C02 rozhodnutia a C05 detailný návrh pending expiration: D1–D6, kontrakty, class/sequence diagram a algoritmus. |
-| [evidence-and-evolution.md](docs/evidence-and-evolution.md) | História overovania, C05 mapovanie návrh–kód–test, tvrdenie o 74 úspešných testoch a obmedzenia prostredia. |
-| [MANUAL-TESTING.md](backend/MANUAL-TESTING.md), [frontend README](frontend/README.md) | Reprodukcia demo scenárov, fixtures, HTTP konvencie a browser skript. |
+| [intent-and-change.md](../01_domain_and_frame/PROJECT_FRAME.md) | Pôvodný účel, stakeholderi a pravidlá; časť o TTL draftu je otvorená otázka. |
+| [c02_baseline_specification.md](../02_requirements_and_spec/baseline_v0.1/c02_baseline_v0.1.md) | Zachovaný v0.1 model: štyri operácie, tri stavy, pravidlá a verifikácia. |
+| [c02-change-impact-analysis.md](../02_requirements_and_spec/baseline_v0.2/c02_change_impact.md) | Analýza dopadu zavedenia oneskoreného schvaľovania. |
+| [c02_baseline_specification_v0.2.md](../02_requirements_and_spec/baseline_v0.2/c02_baseline_v0.2.md) | Aktuálny kontrakt REQ-01–12, BR-01–09, OP-01–05 a V-01–17. |
+| [c02-task14-report.md](../02_requirements_and_spec/task_reports/c02-task14-report.md) | Historický implementačný a runtime/browser report z 4. 10.; nie nový výsledok tejto revízie. |
+| [c03_part_a.md](../03_architecture/c03_part_a_mapping.md) | AS-IS mapovanie so závažnými vecnými nepresnosťami; nemožno ho bez opráv prezentovať ako opis kódu. |
+| [c03.md](../03_architecture/c03_architecture_full.md) | Architektonické drivery, porovnanie alternatív, ADR-01, Mermaid G1–G4, H/I a backlog J–L. Rozlišuje TO-BE a AS-IS. |
+| [architecture-and-decisions.md](../05_verification_and_quality/ARCHITECTURE_CHECKER.md) | Aktuálne C02 rozhodnutia a C05 detailný návrh pending expiration: D1–D6, kontrakty, class/sequence diagram a algoritmus. |
+| [evidence-and-evolution.md](../05_verification_and_quality/DD_DERIVED_TESTS.md) | História overovania, C05 mapovanie návrh–kód–test, tvrdenie o 74 úspešných testoch a obmedzenia prostredia. |
+| [MANUAL-TESTING.md](../../backend/MANUAL-TESTING.md), [frontend README](../../frontend/README.md) | Reprodukcia demo scenárov, fixtures, HTTP konvencie a browser skript. |
 
 Doménový obrázok C1 v C03 je externý GitHub attachment, nie lokálny súbor. Jeho grafický obsah nebol pri tejto lokálnej revízii overený. Textové Mermaid diagramy boli čítané; samotný grafický rendering sa nespúšťal. Originálne učiteľské zadanie C05, ktoré evidencia označuje ako `SWI_C05_Detailed_Design_students_toggle_v4 (1).html`, v repozitári chýba. Jediné sledované HTML je vstupná stránka frontendu. Úplnosť odovzdania voči originálnym cvičeniam preto nemožno nezávisle potvrdiť.
 
@@ -118,7 +124,7 @@ Doménový obrázok C1 v C03 je externý GitHub attachment, nie lokálny súbor.
 
 ### 3.2 Entity a databázový model
 
-Entity sú v [model/](backend/src/main/java/com/reservedbytes/cinema_reservation/model/). Všetky používajú generované `Long` ID so stratégiou `IDENTITY`.
+Entity sú v [model/](../../backend/src/main/java/com/reservedbytes/cinema_reservation/model). Všetky používajú generované `Long` ID so stratégiou `IDENTITY`.
 
 | Trieda | Dáta a vzťahy |
 |---|---|
@@ -162,7 +168,7 @@ Nenašlo sa API na zoznam filmov/projekcií, vytváranie účtov, správu sál/m
 
 ### 3.5 Chyby a autorizácia
 
-[ApiExceptionHandler](backend/src/main/java/com/reservedbytes/cinema_reservation/exception/ApiExceptionHandler.java) mapuje `ReservationException` na príslušný HTTP status a Spring `ProblemDetail`. Nečitateľné JSON mapuje na `400` s detailom `Malformed request body.`
+[ApiExceptionHandler](../../backend/src/main/java/com/reservedbytes/cinema_reservation/exception/ApiExceptionHandler.java) mapuje `ReservationException` na príslušný HTTP status a Spring `ProblemDetail`. Nečitateľné JSON mapuje na `400` s detailom `Malformed request body.`
 
 | Kód | Typické prípady podľa kódu |
 |---|---|
@@ -322,9 +328,9 @@ C05 pridáva osem policy unit testov, štyri service unit testy a dva integračn
 
 ### 6.2 E2E a manuálne skripty
 
-[backend/verify-baseline.ps1](backend/verify-baseline.ps1) testuje živé API, Swagger/OpenAPI a toky A–F, vytvára rezervácie a čaká na reálnu deadline. Nie je to izolovaný unit test. Vyžaduje vhodnú čerstvú demo databázu a jeho spustenie mení jej dáta.
+[backend/verify-baseline.ps1](../../backend/verify-baseline.ps1) testuje živé API, Swagger/OpenAPI a toky A–F, vytvára rezervácie a čaká na reálnu deadline. Nie je to izolovaný unit test. Vyžaduje vhodnú čerstvú demo databázu a jeho spustenie mení jej dáta.
 
-[frontend/verify-ui.mjs](frontend/verify-ui.mjs) riadi Chromium/Edge cez Chrome DevTools Protocol a lokálny debugging port `9222`, používa Node `WebSocket`, kontroluje UI/HTTP stavy, dva taby, reálnu expiráciu a mobilné pretečenie. Zapisuje screenshoty a JSON do `backend/target`. Je to browser E2E skript bez Playwright/Cypress závislosti. Nie je pripojený na `npm test` ani na CI. Frontend nemá samostatnú unit/component test suite.
+[frontend/verify-ui.mjs](../../frontend/verify-ui.mjs) riadi Chromium/Edge cez Chrome DevTools Protocol a lokálny debugging port `9222`, používa Node `WebSocket`, kontroluje UI/HTTP stavy, dva taby, reálnu expiráciu a mobilné pretečenie. Zapisuje screenshoty a JSON do `backend/target`. Je to browser E2E skript bez Playwright/Cypress závislosti. Nie je pripojený na `npm test` ani na CI. Frontend nemá samostatnú unit/component test suite.
 
 ### 6.3 Čo sa vykonalo teraz
 
@@ -498,7 +504,7 @@ Na krátku ukážku možno vedome pridať runtime argumenty `--demo.approval-tim
 
 ### 10.3 Demo dáta
 
-[dev-data.sql](backend/src/main/resources/dev-data.sql) vytvorí používateľov 1, 2 a 3, štyri miesta Hall A v rade 1 a tri projekcie: projekcia 1 začína deň po inicializácii, 2 desať minút po inicializácii a 3 začala hodinu pred ňou. Pre projekciu 3 sú pripravené rezervácie 100 DRAFT a 101 CONFIRMED. SQL nastavuje identity sekvencie, aby nové reservation ID nekolidovali s týmito dvoma fixtures.
+[dev-data.sql](../../backend/src/main/resources/dev-data.sql) vytvorí používateľov 1, 2 a 3, štyri miesta Hall A v rade 1 a tri projekcie: projekcia 1 začína deň po inicializácii, 2 desať minút po inicializácii a 3 začala hodinu pred ňou. Pre projekciu 3 sú pripravené rezervácie 100 DRAFT a 101 CONFIRMED. SQL nastavuje identity sekvencie, aby nové reservation ID nekolidovali s týmito dvoma fixtures.
 
 Pri spustení dev profilu je teda projekcia 1 vhodná na pozitívny tok, projekcia 2 na creation-cutoff chybu a projekcia 3 na už začaté predstavenie. Čas projekcií je viazaný na inicializáciu backendu, nie na otvorenie stránky.
 

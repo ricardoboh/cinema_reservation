@@ -1,5 +1,7 @@
 # C05 Detailed Design — Manage Pending Expiration
 
+> Historical C05 evidence, retained on 2026-11-16. This file contains a historical detailed-design narrative despite its filename. Its named `ReservationExpiredEvent` is inaccurate for the current implementation: the actual event is `ReservationResponse`. Test packages are `com.reservedbytes.cinema_reservation`; rollback uses `setRollbackOnly()`. Historical test/tag claims below are not new verification or remote-submission evidence. `backend/check_architecture.py` is absent. Use the [restored AS-IS design](../04_detailed_design/c05_detailed_design.md), [contracts](../04_detailed_design/DESIGN_CONTRACTS.md) and [sequences](../04_detailed_design/EXPIRATION_SEQUENCE.md) for the current description.
+
 **Team:** Deadlock
 
 **Domain:** Cinema Seat Reservation System
